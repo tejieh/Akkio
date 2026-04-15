@@ -1,1 +1,1 @@
-Do NOT use npm or npx. Use bun and bunx instead.
+@AGENTS.md
