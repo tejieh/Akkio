@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "expect": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "expect-cli@latest",
+        "mcp"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
+    }
+  }
+}

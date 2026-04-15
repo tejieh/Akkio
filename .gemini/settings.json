@@ -1,0 +1,33 @@
+{
+    "mcpServers": {
+        "framer": {
+            "type": "http",
+            "url": "https://mcp.unframer.co/mcp?id=701654d7caaaae8ae0f6f1002f33bf6c3012133c7265cec777eb32efe1ce142e&secret=xtcjxe3Jc0vZrJXU4vWjDEcJa40yIjrG"
+        },
+        "assistant-ui": {
+            "command": "/Users/tejie/.bun/bin/bunx",
+            "args": [
+                "@assistant-ui/mcp-docs-server"
+            ]
+        },
+        "shadcn": {
+            "command": "/Users/tejie/.bun/bin/bunx",
+            "args": [
+                "shadcn@latest",
+                "mcp"
+            ]
+        },
+        "supabase": {
+            "type": "http",
+            "url": "https://mcp.supabase.com/mcp"
+        },
+        "expect": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "expect-cli@latest",
+                "mcp"
+            ]
+        }
+    }
+}

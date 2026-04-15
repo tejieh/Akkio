@@ -1,0 +1,14 @@
+{
+  "mcp": {
+    "expect": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "expect-cli@latest",
+        "mcp"
+      ],
+      "enabled": true
+    }
+  }
+}
