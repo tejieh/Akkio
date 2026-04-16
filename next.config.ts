@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ["@assistant-ui/react", "@assistant-ui/react-ai-sdk"],
 };
 
 export default nextConfig;
