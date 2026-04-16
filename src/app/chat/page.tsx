@@ -29,8 +29,10 @@ export default function ChatPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8}>
               <DropdownMenuItem>
-                <Puzzle />
-                Integrations
+                <Link href="/integrations" tabIndex={-1} className="flex w-full items-center gap-2">
+                  <Puzzle className="w-4 h-4" />
+                  Integrations
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>

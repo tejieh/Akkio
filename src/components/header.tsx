@@ -4,30 +4,58 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Menu } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 120);
     };
+    
+    // Check immediately on mount/route change for fast back/forward navigation sync
+    handleScroll();
     
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   return (
-    <header 
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out ${
-        isScrolled ? "pt-4 px-2 md:px-4" : "pt-0 px-0"
-      }`}
+    <motion.header 
+      key={pathname}
+      initial={false}
+      animate={{
+        paddingTop: isScrolled ? "1rem" : "0rem",
+        paddingLeft: isScrolled ? "0.5rem" : "0rem",
+        paddingRight: isScrolled ? "0.5rem" : "0rem",
+      }}
+      transition={{
+        type: "tween",
+        ease: [0.22, 1, 0.36, 1],
+        duration: 0.5
+      }}
+      className="fixed top-0 left-0 w-full z-50 md:px-4"
     >
-      <div 
-        className={`mx-auto relative flex justify-between items-center w-full transition-all duration-300 ease-in-out ${
+      <motion.div 
+        initial={false}
+        animate={{
+          borderRadius: isScrolled ? 9999 : 0,
+          backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.65)" : "rgba(255, 255, 255, 0)",
+          borderColor: isScrolled ? "rgba(229, 231, 235, 1)" : "rgba(229, 231, 235, 0)",
+          maxWidth: isScrolled ? "42rem" : "100%",
+        }}
+        transition={{
+          type: "tween",
+          ease: [0.22, 1, 0.36, 1],
+          duration: 0.5
+        }}
+        className={`mx-auto relative flex justify-between items-center w-full border ${
           isScrolled 
-            ? "max-w-2xl rounded-full bg-white/90 backdrop-blur-md shadow-lg border border-gray-200 py-2 px-6"
-            : "max-w-full rounded-none bg-transparent border-transparent py-4 px-4 md:px-8"
+            ? "max-w-2xl backdrop-blur-md shadow-lg py-2 px-6"
+            : "max-w-full shadow-none py-4 px-4 md:px-8"
         }`}
       >
         {/* Logo block */}
@@ -63,7 +91,7 @@ export function Header() {
             Sign In
           </Button>
         </div>
-      </div>
-    </header>
+      </motion.div>
+    </motion.header>
   );
 }

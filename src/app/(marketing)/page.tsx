@@ -2,6 +2,12 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Leaf, Zap, Globe, ArrowUpRight, Check } from "lucide-react";
 
+export const metadata = {
+  title: "Hey a Low Carbon Future",
+  description:
+    "A low-carbon design studio building sustainable brands and websites.",
+};
+
 export default function Home() {
   return (
     <div className="relative min-h-screen flex flex-col items-center">
@@ -13,6 +19,7 @@ export default function Home() {
             src="/images/HeroImage.png"
             alt="Sustainable future hero"
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />
@@ -85,7 +92,7 @@ export default function Home() {
               Selected<br />Works
             </h2>
             <p className="text-gray-600 text-lg max-w-md">
-              Proof that sustainability doesn't mean compromising on aesthetics. Explore some of our recent lightweight collaborations.
+              Proof that sustainability doesn&apos;t mean compromising on aesthetics. Explore some of our recent lightweight collaborations.
             </p>
           </div>
           
@@ -140,7 +147,7 @@ export default function Home() {
               { title: "Brand Identity", desc: "Designing visual systems that work seamlessly across digital and physical mediums. Our branding guidelines explicitly tackle carbon footprints, from color choices to typography weights." },
               { title: "Carbon Auditing", desc: "Analyzing your existing digital touchpoints to find inefficiencies, bloated code, and unoptimized assets, providing a strict roadmap to slash your digital emissions." }
             ].map((cap, i) => (
-              <div key={i} className="group border-b border-white/20 pb-12">
+              <div key={cap.title} className="group border-b border-white/20 pb-12">
                 <div className="flex items-baseline gap-6 mb-4">
                   <span className="text-white/40 font-mono text-sm">0{i + 1}</span>
                   <h3 className="text-2xl md:text-3xl font-playfair tracking-wide">{cap.title}</h3>
@@ -185,8 +192,8 @@ export default function Home() {
                   "Monthly Energy Report",
                   "Basic SEO Optimization",
                   "Standard Support"
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center text-gray-700 text-sm">
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center text-gray-700 text-sm">
                     <Check className="w-4 h-4 text-green-600 mr-3 shrink-0" />
                     <span>{feature}</span>
                   </li>
@@ -218,8 +225,8 @@ export default function Home() {
                   "Headless CMS Integration",
                   "Quarterly Strategy Sessions",
                   "Priority Support"
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center text-gray-300 text-sm">
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center text-gray-300 text-sm">
                     <Check className="w-4 h-4 text-[#f0ebd8] mr-3 shrink-0" />
                     <span>{feature}</span>
                   </li>
@@ -247,8 +254,8 @@ export default function Home() {
                   "Custom SLA & Uptime Guarantee",
                   "24/7 Dedicated Support",
                   "On-site Carbon Workshops"
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center text-gray-700 text-sm">
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center text-gray-700 text-sm">
                     <Check className="w-4 h-4 text-green-600 mr-3 shrink-0" />
                     <span>{feature}</span>
                   </li>
@@ -265,4 +272,3 @@ export default function Home() {
     </div>
   );
 }
-

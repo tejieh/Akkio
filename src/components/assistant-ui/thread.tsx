@@ -125,7 +125,6 @@ const Composer: FC = () => {
                       placeholder="Send a message..."
                       className="aui-composer-input max-h-32 min-h-10 w-full resize-none bg-transparent px-1.75 py-1 text-sm outline-none placeholder:text-muted-foreground/80"
                       rows={1}
-                      autoFocus
                       aria-label="Message input"
                     /><ComposerAction /></ComposerPrimitive.AttachmentDropzone>
     </ComposerPrimitive.Root>
@@ -166,12 +165,12 @@ const AssistantMessage: FC = () => {
         <MessagePrimitive.Parts>
           {({ part }) => {
             if (part.type === "text") return <MarkdownText />;
+            if (part.type === "reasoning") return <ChainOfThought />;
             if (part.type === "tool-call")
               return part.toolUI ?? <ToolFallback {...part} />;
             return null;
           }}
         </MessagePrimitive.Parts>
-        <ChainOfThought />
         <MessageError />
       </div>
 
@@ -196,17 +195,9 @@ const ChainOfThought: FC = () => {
         Thinking
       </ChainOfThoughtPrimitive.AccordionTrigger>
       <AuiIf condition={(s) => !s.chainOfThought.collapsed}>
-        <ChainOfThoughtPrimitive.Parts>
-          {({ part }) => {
-            if (part.type === "reasoning")
-              return (
-                <div className="py-2 text-muted-foreground text-sm opacity-80">
-                  <MarkdownText />
-                </div>
-              );
-            return null;
-          }}
-        </ChainOfThoughtPrimitive.Parts>
+        <div className="py-2 text-muted-foreground text-sm opacity-80">
+          <MarkdownText />
+        </div>
       </AuiIf>
     </ChainOfThoughtPrimitive.Root>
   );
@@ -280,7 +271,6 @@ const EditComposer: FC = () => {
       <ComposerPrimitive.Root className="aui-edit-composer-root ml-auto flex w-full max-w-[85%] flex-col rounded-2xl bg-muted">
         <ComposerPrimitive.Input
           className="aui-edit-composer-input min-h-14 w-full resize-none bg-transparent p-4 text-foreground text-sm outline-none"
-          autoFocus
         />
         <div className="aui-edit-composer-footer mx-3 mb-3 flex items-center gap-2 self-end">
           <ComposerPrimitive.Cancel render={<Button variant="ghost" size="sm" />}>Cancel

@@ -1,6 +1,7 @@
 "use client";
 
-import { type PropsWithChildren, useEffect, useState, type FC } from "react";
+import Image from "next/image";
+import { type PropsWithChildren, useEffect, useMemo, useState, type FC } from "react";
 import { XIcon, PlusIcon, FileText } from "lucide-react";
 import {
   AttachmentPrimitive,
@@ -26,21 +27,16 @@ import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button
 import { cn } from "@/lib/utils";
 
 const useFileSrc = (file: File | undefined) => {
-  const [src, setSrc] = useState<string | undefined>(undefined);
+  const src = useMemo(() => {
+    if (!file) return undefined;
+    return URL.createObjectURL(file);
+  }, [file]);
 
   useEffect(() => {
-    if (!file) {
-      setSrc(undefined);
-      return;
-    }
+    if (!src) return;
 
-    const objectUrl = URL.createObjectURL(file);
-    setSrc(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [file]);
+    return () => URL.revokeObjectURL(src);
+  }, [src]);
 
   return src;
 };
@@ -65,18 +61,23 @@ type AttachmentPreviewProps = {
 };
 
 const AttachmentPreview: FC<AttachmentPreviewProps> = ({ src }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const isLoaded = loadedSrc === src;
+
   return (
-    <img
+    <Image
       src={src}
       alt="Attachment preview"
+      unoptimized
+      width={1600}
+      height={1600}
       className={cn(
         "block h-auto max-h-[80vh] w-auto max-w-full object-contain",
         isLoaded
           ? "aui-attachment-preview-image-loaded"
           : "aui-attachment-preview-image-loading invisible",
       )}
-      onLoad={() => setIsLoaded(true)}
+      onLoad={() => setLoadedSrc(src)}
     />
   );
 };
