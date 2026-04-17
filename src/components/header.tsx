@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ArrowRight, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -76,20 +77,20 @@ export function Header() {
         </div>
         
         <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex gap-8 text-[12px] font-medium text-gray-800 uppercase tracking-wider">
-          <Link href="#" className="hover:text-black transition-colors">Blog</Link>
-          <Link href="#" className="hover:text-black transition-colors">Pricing</Link>
-          <Link href="#" className="hover:text-black transition-colors">Placeholder</Link>
+          <a href="/#" className="hover:text-black transition-colors">Blog</a>
+          <a href="/#" className="hover:text-black transition-colors">Pricing</a>
+          <a href="/#" className="hover:text-black transition-colors">Placeholder</a>
         </nav>
 
         {/* Contact block */}
         <div className="flex-1 flex justify-end z-10">
-          <Button 
-            variant="default" 
-            className="bg-[#1a1a1a] text-white rounded-full px-4 py-2 h-8 text-[12px] font-medium hover:bg-black transition-colors"
+          <Link 
+            href="/sign-in"
+            className={cn(buttonVariants({ variant: "default" }), "bg-[#1a1a1a] text-white rounded-full px-4 py-2 h-8 text-[12px] font-medium hover:bg-black transition-colors")}
           >
             <ArrowRight className="w-3.5 h-3.5 mr-1" />
             Sign In
-          </Button>
+          </Link>
         </div>
       </motion.div>
     </motion.header>
