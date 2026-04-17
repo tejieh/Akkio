@@ -1,13 +1,20 @@
-import { Auth, AuthView } from "@/components/ui/auth-form-1";
+import type { Metadata } from "next";
+import { AuthPageShell } from "@/components/auth-page-shell";
+import { Auth } from "@/components/ui/auth-form-1";
+import { authViews } from "@/lib/auth-views";
+import { redirectAuthenticatedUser } from "@/lib/auth-session";
 
-export default function SignInPage() {
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to your Akkio account.",
+};
+
+export default async function SignInPage() {
+  await redirectAuthenticatedUser();
+
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-8 lg:border-r lg:border-border">
-        <Auth defaultView={AuthView.SIGN_IN} className="w-full max-w-md" />
-      </div>
-      <div className="w-1/2 relative hidden lg:block bg-white">
-      </div>
-    </div>
+    <AuthPageShell>
+      <Auth defaultView={authViews.SIGN_IN} />
+    </AuthPageShell>
   );
 }

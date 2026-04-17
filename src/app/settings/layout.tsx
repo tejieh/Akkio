@@ -10,6 +10,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { ReactNode } from "react";
+import { requireServerSession } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -49,7 +50,9 @@ const sidebarNavItems = [
   },
 ];
 
-export default function SettingsLayout({ children }: { children: ReactNode }) {
+export default async function SettingsLayout({ children }: { children: ReactNode }) {
+  await requireServerSession();
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <div className="hidden border-r bg-muted/20 md:block w-64 lg:w-72 shrink-0">

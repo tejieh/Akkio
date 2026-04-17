@@ -8,7 +8,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
-export function Header() {
+interface HeaderProps {
+  isAuthenticated?: boolean;
+}
+
+export function Header({ isAuthenticated = false }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
@@ -77,19 +81,19 @@ export function Header() {
         </div>
         
         <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex gap-8 text-[12px] font-medium text-gray-800 uppercase tracking-wider">
-          <a href="/#" className="hover:text-black transition-colors">Blog</a>
-          <a href="/#" className="hover:text-black transition-colors">Pricing</a>
-          <a href="/#" className="hover:text-black transition-colors">Placeholder</a>
+          <Link href="/#" className="hover:text-black transition-colors">Blog</Link>
+          <Link href="/#" className="hover:text-black transition-colors">Pricing</Link>
+          <Link href="/#" className="hover:text-black transition-colors">Placeholder</Link>
         </nav>
 
         {/* Contact block */}
         <div className="flex-1 flex justify-end z-10">
           <Link 
-            href="/sign-in"
+            href={isAuthenticated ? "/chat" : "/sign-in"}
             className={cn(buttonVariants({ variant: "default" }), "bg-[#1a1a1a] text-white rounded-full px-4 py-2 h-8 text-[12px] font-medium hover:bg-black transition-colors")}
           >
             <ArrowRight className="w-3.5 h-3.5 mr-1" />
-            Sign In
+            {isAuthenticated ? "Go to Chat" : "Sign In"}
           </Link>
         </div>
       </motion.div>

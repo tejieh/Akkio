@@ -3,8 +3,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { requireServerSession } from "@/lib/auth-session";
 
-export default function ProfileSettingsPage() {
+export default async function ProfileSettingsPage() {
+  const session = await requireServerSession();
+  const nameParts = (session.user.name ?? "").trim().split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] ?? "";
+  const lastName = nameParts.slice(1).join(" ");
+  const avatarFallback =
+    session.user.name
+      ?.split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || session.user.email[0]?.toUpperCase() || "U";
+
   return (
     <div className="space-y-10 pb-16">
       <div>
@@ -26,8 +38,8 @@ export default function ProfileSettingsPage() {
           </div>
           <div className="flex items-center gap-6 md:w-2/3">
             <Avatar className="h-20 w-20 cursor-pointer hover:opacity-80 transition-opacity border bg-muted">
-              <AvatarImage src="/placeholder-avatar.jpg" alt="Avatar" />
-              <AvatarFallback className="text-2xl font-medium">U</AvatarFallback>
+              <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? session.user.email} />
+              <AvatarFallback className="text-2xl font-medium">{avatarFallback}</AvatarFallback>
             </Avatar>
             <div className="flex gap-3">
               <Button variant="outline" size="sm" className="h-9">Upload new</Button>
@@ -50,16 +62,16 @@ export default function ProfileSettingsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2.5">
                 <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">First name</Label>
-                <Input id="firstName" placeholder="Jane" defaultValue="Jane" className="max-w-xs" />
+                <Input id="firstName" placeholder="Jane" defaultValue={firstName} className="max-w-xs" />
               </div>
               <div className="space-y-2.5">
                 <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last name</Label>
-                <Input id="lastName" placeholder="Doe" defaultValue="Doe" className="max-w-xs" />
+                <Input id="lastName" placeholder="Doe" defaultValue={lastName} className="max-w-xs" />
               </div>
             </div>
             <div className="space-y-2.5">
               <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email address</Label>
-              <Input id="email" type="email" placeholder="jane@example.com" defaultValue="jane@example.com" className="max-w-md" />
+              <Input id="email" type="email" placeholder="jane@example.com" defaultValue={session.user.email} className="max-w-md" />
             </div>
           </div>
         </section>
@@ -81,7 +93,7 @@ export default function ProfileSettingsPage() {
                 id="bio"
                 className="flex min-h-[120px] w-full max-w-lg rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="I'm a software engineer..."
-                defaultValue="Product Designer building the future of software."
+                defaultValue=""
               />
               <p className="text-xs text-muted-foreground">
                 You can use Markdown to format your bio. Max 500 characters.

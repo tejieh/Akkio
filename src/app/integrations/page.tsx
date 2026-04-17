@@ -1,6 +1,7 @@
 import { Mail, GitBranch, Calendar, FileText, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { requireServerSession } from "@/lib/auth-session";
 
 export const metadata = {
   title: "Integrations",
@@ -38,7 +39,9 @@ const INTEGRATIONS = [
   }
 ];
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  await requireServerSession();
+
   return (
     <div className="container mx-auto px-4 py-10 max-w-7xl">
       <div className="space-y-6 pb-16 pt-8">

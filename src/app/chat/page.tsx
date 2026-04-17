@@ -1,51 +1,22 @@
-"use client";
+import type { Metadata } from "next";
+import { ChatView } from "@/app/chat/chat-view";
+import { requireServerSession } from "@/lib/auth-session";
 
-import { Thread } from "@/components/assistant-ui/thread";
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
-import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Puzzle, Settings } from "lucide-react";
-import Link from "next/link";
+export const metadata: Metadata = {
+  title: "Chat",
+  description: "Authenticated chat workspace.",
+};
 
-export default function ChatPage() {
-  const runtime = useChatRuntime();
+export default async function ChatPage() {
+  const session = await requireServerSession();
 
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      <div className="relative h-dvh w-full">
-        <div className="absolute top-4 right-4 z-10">
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Avatar className="cursor-pointer">
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={8}>
-              <DropdownMenuItem>
-                <Link href="/integrations" tabIndex={-1} className="flex w-full items-center gap-2">
-                  <Puzzle className="w-4 h-4" />
-                  Integrations
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link href="/settings" tabIndex={-1} className="flex w-full items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <Thread />
-      </div>
-    </AssistantRuntimeProvider>
+    <ChatView
+      user={{
+        email: session.user.email,
+        image: session.user.image,
+        name: session.user.name,
+      }}
+    />
   );
 }
