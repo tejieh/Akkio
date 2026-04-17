@@ -1,15 +1,17 @@
 {
   "mcpServers": {
     "expect": {
-      "command": "npx",
+      "command": "bunx",
       "args": [
         "-y",
+        "-a",
+        "gemini",
         "expect-cli@latest",
         "mcp"
       ]
     },
     "shadcn": {
-      "command": "npx",
+      "command": "bunx",
       "args": [
         "shadcn@latest",
         "mcp"

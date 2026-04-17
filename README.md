@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Setup
 
-## Getting Started
-
-First, run the development server:
+Install dependencies with Bun:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+```
+
+Create a `.env` file from `.env.example` and set:
+
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `RESEND_API_KEY`
+- `AUTH_EMAIL_FROM`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+
+Start the development server:
+
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prisma
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Generate the Prisma client:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun run db:generate
+```
 
-## Learn More
+Validate the Prisma schema:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun run db:validate
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Deploy committed migrations:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+bun run db:migrate:deploy
+```
 
-## Deploy on Vercel
+The Prisma baseline migration in `prisma/migrations` is now the source of truth for Better Auth tables and the database-backed rate limiter.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Auth and Email
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Auth uses Better Auth with the Prisma adapter and requires verified email before the first session is created.
+
+Supported flows:
+
+- sign up with email/password
+- sign in with email/password
+- resend verification email
+- request password reset
+- reset password from emailed token
+
+Emails are sent through Resend using `RESEND_API_KEY` and `AUTH_EMAIL_FROM`.
+
+## Vercel
+
+Recommended deployment shape:
+
+- use separate `DATABASE_URL` values for local, preview, and production
+- run `bunx prisma migrate deploy` during deployment
+- keep auth and Prisma routes on the Node runtime
+- only enable preview auth flows when `BETTER_AUTH_ALLOW_VERCEL_PREVIEW=true`
+
+This repo does not use `npm` or `npx`. Use `bun` and `bunx` only.

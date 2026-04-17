@@ -5,11 +5,11 @@ import { authViews } from "@/lib/auth-views";
 import { redirectAuthenticatedUser } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
-  title: "Sign In",
-  description: "Sign in to your Akkio account.",
+  title: "Forgot Password",
+  description: "Request a password reset for your Akkio account.",
 };
 
-export default async function SignInPage({
+export default async function ForgotPasswordPage({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -22,7 +22,10 @@ export default async function SignInPage({
 
   return (
     <AuthPageShell>
-      <Auth defaultEmail={params.email ?? null} defaultView={authViews.SIGN_IN} />
+      <Auth
+        defaultEmail={params.email ?? null}
+        defaultView={authViews.FORGOT_PASSWORD}
+      />
     </AuthPageShell>
   );
 }

@@ -1,13 +1,13 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth, isAuthConfigured } from "@/lib/auth";
+import { getAuth, isAuthConfigured } from "@/lib/auth";
 
 export async function getServerSession() {
   if (!isAuthConfigured) {
     return null;
   }
 
-  return auth.api.getSession({
+  return getAuth().api.getSession({
     headers: await headers(),
   });
 }

@@ -7,7 +7,7 @@
       ]
     },
     "shadcn": {
-      "command": "/Users/tejie/.bun/bin/bunx",
+      "command": "bunx",
       "args": [
         "shadcn@latest",
         "mcp"
@@ -18,9 +18,11 @@
       "url": "https://mcp.supabase.com/mcp"
     },
     "expect": {
-      "command": "npx",
+      "command": "bunx",
       "args": [
         "-y",
+        "-a",
+        "gemini",
         "expect-cli@latest",
         "mcp"
       ]

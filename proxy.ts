@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 const protectedPrefixes = ["/chat", "/settings", "/integrations"];
-const authRoutes = new Set(["/sign-in", "/sign-up"]);
+const authRoutes = new Set(["/sign-in", "/sign-up", "/forgot-password"]);
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -11,6 +11,8 @@ export function proxy(request: NextRequest) {
     pathname.startsWith(prefix),
   );
 
+  // This proxy only handles optimistic UX redirects.
+  // Real authorization must still happen server-side on every protected page and API route.
   if (isProtectedRoute && !hasSession) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
@@ -23,5 +25,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/chat/:path*", "/settings/:path*", "/integrations/:path*", "/sign-in", "/sign-up"],
+  matcher: [
+    "/chat/:path*",
+    "/settings/:path*",
+    "/integrations/:path*",
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+  ],
 };

@@ -1,11 +1,11 @@
 [mcp_servers.expect]
-command = "npx"
-args = [ "-y", "expect-cli@latest", "mcp" ]
+command = "bunx"
+args = [ "-y", "-a", "gemini", "expect-cli@latest", "mcp" ]
 startup_timeout_sec = 20
 
 [mcp_servers.mcp-docs-server]
-command = "npx"
-args = [ "-y", "@assistant-ui/mcp-docs-server" ]
+command = "bunx"
+args = [ "@assistant-ui/mcp-docs-server", "-a", "gemini" ]
 
 [features]
 rmcp_client=true

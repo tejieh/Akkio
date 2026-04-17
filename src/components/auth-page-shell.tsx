@@ -10,7 +10,7 @@ export function AuthPageShell({ children }: AuthPageShellProps) {
       <div className="flex min-h-dvh items-center justify-center px-4 py-6 sm:px-6 lg:border-r lg:border-border lg:px-8">
         <div className="w-full max-w-md">{children}</div>
       </div>
-      <div className="hidden bg-white lg:block" />
+      <div className="hidden bg-muted lg:block" />
     </div>
   );
 }

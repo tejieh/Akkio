@@ -3,12 +3,22 @@
 import * as React from "react";
 import { startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  type FieldValues,
+  type Path,
+  type UseFormRegister,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import {
+  authClient,
+  authEndpointRequest,
+  getAuthErrorMessage,
+  getAuthErrorStatus,
+} from "@/lib/auth-client";
 import { authViews, type AuthView } from "@/lib/auth-views";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,51 +40,146 @@ const signUpSchema = z.object({
   }),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+});
+
+const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(8, "Confirm your new password"),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Passwords must match",
+    path: ["confirmPassword"],
+  });
+
+const verifyEmailSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+});
+
 type SignInFormValues = z.infer<typeof signInSchema>;
 type SignUpFormValues = z.infer<typeof signUpSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+type VerifyEmailFormValues = z.infer<typeof verifyEmailSchema>;
+type PasswordFieldName = "password" | "confirmPassword";
+
+const viewToPath: Record<AuthView, string> = {
+  [authViews.SIGN_IN]: "/sign-in",
+  [authViews.SIGN_UP]: "/sign-up",
+  [authViews.FORGOT_PASSWORD]: "/forgot-password",
+  [authViews.RESET_PASSWORD]: "/reset-password",
+  [authViews.VERIFY_EMAIL]: "/verify-email",
+};
 
 interface AuthProps extends React.ComponentProps<"div"> {
+  callbackURL?: string | null;
+  defaultEmail?: string | null;
   defaultView?: AuthView;
+  resetToken?: string | null;
+  verificationToken?: string | null;
 }
 
 interface FormState {
   error: string | null;
   isLoading: boolean;
+  notice: string | null;
+  showConfirmPassword?: boolean;
   showPassword: boolean;
 }
 
-function AuthError({ message }: { message: string | null }) {
+function mergeFormState(state: FormState, updates: Partial<FormState>) {
+  return { ...state, ...updates };
+}
+
+function buildAuthPath(
+  view: AuthView,
+  params?: Record<string, string | null | undefined>,
+) {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params ?? {}).forEach(([key, value]) => {
+    if (value) {
+      searchParams.set(key, value);
+    }
+  });
+
+  const query = searchParams.toString();
+  return query ? `${viewToPath[view]}?${query}` : viewToPath[view];
+}
+
+function AuthMessage({
+  message,
+  tone = "error",
+}: {
+  message: string | null;
+  tone?: "error" | "notice";
+}) {
   if (!message) {
     return null;
   }
 
   return (
-    <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+    <div
+      className={cn(
+        "rounded-lg border p-4 text-sm",
+        tone === "error"
+          ? "border-destructive/20 bg-destructive/10 text-destructive"
+          : "border-primary/20 bg-primary/10 text-foreground",
+      )}
+    >
       {message}
     </div>
   );
 }
 
-function PasswordField({
+function AuthCard({
+  children,
+  description,
+  footer,
+  title,
+}: {
+  children: React.ReactNode;
+  description: string;
+  footer?: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <>
+      <div className="mb-8 text-center">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
+          Akkio
+        </p>
+        <h1 className="mt-3 text-3xl font-semibold text-foreground">{title}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+      </div>
+      {children}
+      {footer ? <div className="mt-8 text-center text-sm text-muted-foreground">{footer}</div> : null}
+    </>
+  );
+}
+
+function PasswordInput<TFieldValues extends FieldValues>({
   autoComplete,
   disabled,
   error,
   id,
   label,
+  onToggle,
   placeholder,
   register,
   showPassword,
-  toggleShowPassword,
 }: {
   autoComplete: string;
   disabled: boolean;
   error?: string;
-  id: string;
+  id: Path<TFieldValues> & PasswordFieldName;
   label: string;
+  onToggle: () => void;
   placeholder: string;
-  register: ReturnType<typeof useForm<SignInFormValues | SignUpFormValues>>["register"];
+  register: UseFormRegister<TFieldValues>;
   showPassword: boolean;
-  toggleShowPassword: () => void;
 }) {
   return (
     <div className="space-y-2">
@@ -87,14 +192,15 @@ function PasswordField({
           autoComplete={autoComplete}
           disabled={disabled}
           className={cn(error && "border-destructive")}
-          {...register("password")}
+          {...register(id)}
         />
         <Button
+          aria-label={showPassword ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
           type="button"
           variant="ghost"
           size="icon"
           className="absolute right-0 top-0 h-full"
-          onClick={toggleShowPassword}
+          onClick={onToggle}
           disabled={disabled}
         >
           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -105,13 +211,21 @@ function PasswordField({
   );
 }
 
-function AuthSignIn({ onSignUp }: { onSignUp: () => void }) {
+function AuthSignIn({
+  defaultEmail,
+  onViewChange,
+}: {
+  defaultEmail?: string | null;
+  onViewChange: (view: AuthView, params?: Record<string, string>) => void;
+}) {
   const router = useRouter();
   const [formState, setFormState] = React.useState<FormState>({
     error: null,
+    notice: null,
     isLoading: false,
     showPassword: false,
   });
+  const [verificationEmail, setVerificationEmail] = React.useState(defaultEmail ?? "");
 
   const {
     formState: { errors },
@@ -120,13 +234,18 @@ function AuthSignIn({ onSignUp }: { onSignUp: () => void }) {
   } = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
-      email: "",
+      email: defaultEmail ?? "",
       password: "",
     },
   });
 
   const onSubmit = handleSubmit(async (data) => {
-    setFormState((current) => ({ ...current, error: null, isLoading: true }));
+    setFormState((current) => ({
+      ...current,
+      error: null,
+      notice: null,
+      isLoading: true,
+    }));
 
     const { error } = await authClient.signIn.email({
       email: data.email,
@@ -135,9 +254,17 @@ function AuthSignIn({ onSignUp }: { onSignUp: () => void }) {
     });
 
     if (error) {
+      const message = getAuthErrorMessage(error, "Unable to sign in.");
+      const requiresVerification =
+        getAuthErrorStatus(error) === 403 &&
+        message.toLowerCase().includes("verify");
+
+      setVerificationEmail(requiresVerification ? data.email : "");
       setFormState((current) => ({
         ...current,
-        error: error.message || "Unable to sign in.",
+        error: requiresVerification
+          ? "Your email is not verified yet. A fresh verification link has been sent."
+          : message,
         isLoading: false,
       }));
       return;
@@ -150,96 +277,125 @@ function AuthSignIn({ onSignUp }: { onSignUp: () => void }) {
   });
 
   return (
-    <motion.div
+    <m.div
       key="sign-in"
-      data-slot="auth-sign-in"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -16 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
       className="p-8"
     >
-      <div className="mb-8 text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
-          Akkio
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold text-foreground">Welcome back</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Sign in to continue into your workspace.
-        </p>
-      </div>
+      <AuthCard
+        title="Welcome back"
+        description="Sign in to continue into your workspace."
+        footer={
+          <>
+            No account?{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm"
+              onClick={() => onViewChange(authViews.SIGN_UP)}
+              disabled={formState.isLoading}
+            >
+              Create one
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-6">
+          <AuthMessage message={formState.error} />
+          <AuthMessage message={formState.notice} tone="notice" />
 
-      <form onSubmit={onSubmit} className="space-y-6">
-        <AuthError message={formState.error} />
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              autoComplete="email"
+              disabled={formState.isLoading}
+              className={cn(errors.email && "border-destructive")}
+              {...register("email")}
+            />
+            {errors.email ? (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            ) : null}
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="sign-in-email">Email</Label>
-          <Input
-            id="sign-in-email"
-            type="email"
-            placeholder="name@example.com"
-            autoComplete="email"
+          <PasswordInput<SignInFormValues>
+            autoComplete="current-password"
             disabled={formState.isLoading}
-            className={cn(errors.email && "border-destructive")}
-            {...register("email")}
+            error={errors.password?.message}
+            id="password"
+            label="Password"
+            onToggle={() =>
+              setFormState((current) => ({
+                ...current,
+                showPassword: !current.showPassword,
+              }))
+            }
+            placeholder="••••••••"
+            register={register}
+            showPassword={formState.showPassword}
           />
-          {errors.email ? (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
-          ) : null}
-        </div>
 
-        <PasswordField
-          autoComplete="current-password"
-          disabled={formState.isLoading}
-          error={errors.password?.message}
-          id="sign-in-password"
-          label="Password"
-          placeholder="••••••••"
-          register={register as ReturnType<typeof useForm<SignInFormValues | SignUpFormValues>>["register"]}
-          showPassword={formState.showPassword}
-          toggleShowPassword={() =>
-            setFormState((current) => ({
-              ...current,
-              showPassword: !current.showPassword,
-            }))
-          }
-        />
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm text-muted-foreground"
+              onClick={() => onViewChange(authViews.FORGOT_PASSWORD)}
+              disabled={formState.isLoading}
+            >
+              Forgot password?
+            </Button>
+            {verificationEmail ? (
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 text-sm"
+                onClick={() =>
+                  onViewChange(authViews.VERIFY_EMAIL, { email: verificationEmail })
+                }
+                disabled={formState.isLoading}
+              >
+                Verify email
+              </Button>
+            ) : null}
+          </div>
 
-        <Button type="submit" className="w-full" disabled={formState.isLoading}>
-          {formState.isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Signing in...
-            </>
-          ) : (
-            "Sign in"
-          )}
-        </Button>
-      </form>
-
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-        No account?{" "}
-        <Button
-          type="button"
-          variant="link"
-          className="h-auto p-0 text-sm"
-          onClick={onSignUp}
-          disabled={formState.isLoading}
-        >
-          Create one
-        </Button>
-      </p>
-    </motion.div>
+          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+            {formState.isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign in"
+            )}
+          </Button>
+        </form>
+      </AuthCard>
+    </m.div>
   );
 }
 
-function AuthSignUp({ onSignIn }: { onSignIn: () => void }) {
+function AuthSignUp({
+  onViewChange,
+}: {
+  onViewChange: (view: AuthView, params?: Record<string, string>) => void;
+}) {
   const router = useRouter();
   const [formState, setFormState] = React.useState<FormState>({
     error: null,
+    notice: null,
     isLoading: false,
     showPassword: false,
   });
+  const [terms, setTerms] = React.useState(false);
+  const termsLabelId = React.useId();
+  const termsDescriptionId = React.useId();
 
   const {
     formState: { errors },
@@ -256,10 +412,13 @@ function AuthSignUp({ onSignIn }: { onSignIn: () => void }) {
     },
   });
 
-  const [terms, setTerms] = React.useState(false);
-
   const onSubmit = handleSubmit(async (data) => {
-    setFormState((current) => ({ ...current, error: null, isLoading: true }));
+    setFormState((current) => ({
+      ...current,
+      error: null,
+      notice: null,
+      isLoading: true,
+    }));
 
     const { error } = await authClient.signUp.email({
       name: data.name,
@@ -271,155 +430,633 @@ function AuthSignUp({ onSignIn }: { onSignIn: () => void }) {
     if (error) {
       setFormState((current) => ({
         ...current,
-        error: error.message || "Unable to create your account.",
+        error: getAuthErrorMessage(error, "Unable to create your account."),
         isLoading: false,
       }));
       return;
     }
 
     startTransition(() => {
-      router.push("/chat");
-      router.refresh();
+      router.push(
+        buildAuthPath(authViews.VERIFY_EMAIL, {
+          email: data.email,
+          sent: "1",
+        }),
+      );
     });
   });
 
   return (
-    <motion.div
+    <m.div
       key="sign-up"
-      data-slot="auth-sign-up"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -16 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
       className="p-8"
     >
-      <div className="mb-8 text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
-          Akkio
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold text-foreground">Create account</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Start your SaaS workspace with email and password.
-        </p>
-      </div>
+      <AuthCard
+        title="Create account"
+        description="Create your workspace, then verify your email before the first session starts."
+        footer={
+          <>
+            Have an account?{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm"
+              onClick={() => onViewChange(authViews.SIGN_IN)}
+              disabled={formState.isLoading}
+            >
+              Sign in
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-6">
+          <AuthMessage message={formState.error} />
 
-      <form onSubmit={onSubmit} className="space-y-6">
-        <AuthError message={formState.error} />
-
-        <div className="space-y-2">
-          <Label htmlFor="sign-up-name">Name</Label>
-          <Input
-            id="sign-up-name"
-            type="text"
-            placeholder="Jane Doe"
-            autoComplete="name"
-            disabled={formState.isLoading}
-            className={cn(errors.name && "border-destructive")}
-            {...register("name")}
-          />
-          {errors.name ? (
-            <p className="text-xs text-destructive">{errors.name.message}</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="sign-up-email">Email</Label>
-          <Input
-            id="sign-up-email"
-            type="email"
-            placeholder="name@example.com"
-            autoComplete="email"
-            disabled={formState.isLoading}
-            className={cn(errors.email && "border-destructive")}
-            {...register("email")}
-          />
-          {errors.email ? (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
-          ) : null}
-        </div>
-
-        <PasswordField
-          autoComplete="new-password"
-          disabled={formState.isLoading}
-          error={errors.password?.message}
-          id="sign-up-password"
-          label="Password"
-          placeholder="Choose a strong password"
-          register={register as ReturnType<typeof useForm<SignInFormValues | SignUpFormValues>>["register"]}
-          showPassword={formState.showPassword}
-          toggleShowPassword={() =>
-            setFormState((current) => ({
-              ...current,
-              showPassword: !current.showPassword,
-            }))
-          }
-        />
-
-        <div className="flex items-start space-x-3">
-          <Checkbox
-            id="terms"
-            checked={terms}
-            onCheckedChange={(checked) => {
-              const nextValue = checked === true;
-              setTerms(nextValue);
-              setValue("terms", nextValue, {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
-            }}
-            disabled={formState.isLoading}
-          />
-          <div className="space-y-1">
-            <Label htmlFor="terms" className="text-sm">
-              I agree to the terms
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Account creation is enabled with email and password only. Google OAuth is intentionally disabled.
-            </p>
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Jane Doe"
+              autoComplete="name"
+              disabled={formState.isLoading}
+              className={cn(errors.name && "border-destructive")}
+              {...register("name")}
+            />
+            {errors.name ? (
+              <p className="text-xs text-destructive">{errors.name.message}</p>
+            ) : null}
           </div>
-        </div>
-        {errors.terms ? (
-          <p className="text-xs text-destructive">{errors.terms.message}</p>
-        ) : null}
 
-        <Button type="submit" className="w-full" disabled={formState.isLoading}>
-          {formState.isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create account"
-          )}
-        </Button>
-      </form>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              autoComplete="email"
+              disabled={formState.isLoading}
+              className={cn(errors.email && "border-destructive")}
+              {...register("email")}
+            />
+            {errors.email ? (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            ) : null}
+          </div>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-        Have an account?{" "}
-        <Button
-          type="button"
-          variant="link"
-          className="h-auto p-0 text-sm"
-          onClick={onSignIn}
-          disabled={formState.isLoading}
-        >
-          Sign in
-        </Button>
-      </p>
-    </motion.div>
+          <PasswordInput<SignUpFormValues>
+            autoComplete="new-password"
+            disabled={formState.isLoading}
+            error={errors.password?.message}
+            id="password"
+            label="Password"
+            onToggle={() =>
+              setFormState((current) => ({
+                ...current,
+                showPassword: !current.showPassword,
+              }))
+            }
+            placeholder="Choose a strong password"
+            register={register}
+            showPassword={formState.showPassword}
+          />
+
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="terms"
+              aria-labelledby={termsLabelId}
+              aria-describedby={termsDescriptionId}
+              checked={terms}
+              onCheckedChange={(checked) => {
+                const nextValue = checked === true;
+                setTerms(nextValue);
+                setValue("terms", nextValue, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              disabled={formState.isLoading}
+            />
+            <div className="space-y-1">
+              <Label id={termsLabelId} htmlFor="terms" className="text-sm">
+                I agree to the terms
+              </Label>
+              <p id={termsDescriptionId} className="text-xs text-muted-foreground">
+                Sign-up uses email and password only. Sessions start after email
+                verification.
+              </p>
+            </div>
+          </div>
+          {errors.terms ? (
+            <p className="text-xs text-destructive">{errors.terms.message}</p>
+          ) : null}
+
+          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+            {formState.isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create account"
+            )}
+          </Button>
+        </form>
+      </AuthCard>
+    </m.div>
+  );
+}
+
+function AuthForgotPassword({
+  defaultEmail,
+  onViewChange,
+}: {
+  defaultEmail?: string | null;
+  onViewChange: (view: AuthView, params?: Record<string, string>) => void;
+}) {
+  const [formState, setFormState] = React.useState<FormState>({
+    error: null,
+    notice: null,
+    isLoading: false,
+    showPassword: false,
+  });
+
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+  } = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: defaultEmail ?? "",
+    },
+  });
+
+  const onSubmit = handleSubmit(async (data) => {
+    setFormState((current) => ({
+      ...current,
+      error: null,
+      notice: null,
+      isLoading: true,
+    }));
+
+    try {
+      await authEndpointRequest({
+        method: "POST",
+        path: "/request-password-reset",
+        body: {
+          email: data.email,
+          redirectTo: "/reset-password",
+        },
+      });
+
+      setFormState((current) => ({
+        ...current,
+        notice:
+          "If an account exists for that email, a password reset link has been sent.",
+        isLoading: false,
+      }));
+    } catch (error) {
+      setFormState((current) => ({
+        ...current,
+        error: getAuthErrorMessage(
+          error as Parameters<typeof getAuthErrorMessage>[0],
+          "Unable to start password reset.",
+        ),
+        isLoading: false,
+      }));
+    }
+  });
+
+  return (
+    <m.div
+      key="forgot-password"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="p-8"
+    >
+      <AuthCard
+        title="Reset password"
+        description="Request a reset link without exposing whether the email exists."
+        footer={
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 text-sm"
+            onClick={() => onViewChange(authViews.SIGN_IN)}
+            disabled={formState.isLoading}
+          >
+            Back to sign in
+          </Button>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-6">
+          <AuthMessage message={formState.error} />
+          <AuthMessage message={formState.notice} tone="notice" />
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              autoComplete="email"
+              disabled={formState.isLoading}
+              className={cn(errors.email && "border-destructive")}
+              {...register("email")}
+            />
+            {errors.email ? (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            ) : null}
+          </div>
+
+          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+            {formState.isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending reset link...
+              </>
+            ) : (
+              "Send reset link"
+            )}
+          </Button>
+        </form>
+      </AuthCard>
+    </m.div>
+  );
+}
+
+function AuthResetPassword({
+  onViewChange,
+  resetToken,
+}: {
+  onViewChange: (view: AuthView, params?: Record<string, string>) => void;
+  resetToken?: string | null;
+}) {
+  const [formState, setFormState] = React.useState<FormState>({
+    error: null,
+    notice: null,
+    isLoading: false,
+    showConfirmPassword: false,
+    showPassword: false,
+  });
+
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+  } = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const onSubmit = handleSubmit(async (data) => {
+    if (!resetToken) {
+      setFormState((current) => ({
+        ...current,
+        error: "This password reset link is invalid or missing.",
+      }));
+      return;
+    }
+
+    setFormState((current) => ({
+      ...current,
+      error: null,
+      notice: null,
+      isLoading: true,
+    }));
+
+    try {
+      await authEndpointRequest({
+        method: "POST",
+        path: "/reset-password",
+        body: {
+          newPassword: data.password,
+          token: resetToken,
+        },
+      });
+
+      setFormState((current) => ({
+        ...current,
+        notice: "Password updated. You can sign in with your new password now.",
+        isLoading: false,
+      }));
+    } catch (error) {
+      setFormState((current) => ({
+        ...current,
+        error: getAuthErrorMessage(
+          error as Parameters<typeof getAuthErrorMessage>[0],
+          "This reset link is invalid, expired, or has already been used.",
+        ),
+        isLoading: false,
+      }));
+    }
+  });
+
+  return (
+    <m.div
+      key="reset-password"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="p-8"
+    >
+      <AuthCard
+        title="Choose a new password"
+        description="Reset the password, then sign back in with a fresh session."
+        footer={
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 text-sm"
+            onClick={() => onViewChange(authViews.SIGN_IN)}
+            disabled={formState.isLoading}
+          >
+            Back to sign in
+          </Button>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-6">
+          <AuthMessage message={formState.error} />
+          <AuthMessage message={formState.notice} tone="notice" />
+
+          {!resetToken ? (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+              This password reset link is missing or malformed. Request a fresh link.
+            </div>
+          ) : null}
+
+          <PasswordInput<ResetPasswordFormValues>
+            autoComplete="new-password"
+            disabled={formState.isLoading || !resetToken}
+            error={errors.password?.message}
+            id="password"
+            label="New password"
+            onToggle={() =>
+              setFormState((current) => ({
+                ...current,
+                showPassword: !current.showPassword,
+              }))
+            }
+            placeholder="Choose a strong password"
+            register={register}
+            showPassword={formState.showPassword}
+          />
+
+          <PasswordInput<ResetPasswordFormValues>
+            autoComplete="new-password"
+            disabled={formState.isLoading || !resetToken}
+            error={errors.confirmPassword?.message}
+            id="confirmPassword"
+            label="Confirm password"
+            onToggle={() =>
+              setFormState((current) => ({
+                ...current,
+                showConfirmPassword: !current.showConfirmPassword,
+              }))
+            }
+            placeholder="Repeat your new password"
+            register={register}
+            showPassword={Boolean(formState.showConfirmPassword)}
+          />
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={formState.isLoading || !resetToken}
+          >
+            {formState.isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating password...
+              </>
+            ) : (
+              "Update password"
+            )}
+          </Button>
+        </form>
+      </AuthCard>
+    </m.div>
+  );
+}
+
+function AuthVerifyEmail({
+  callbackURL,
+  defaultEmail,
+  onViewChange,
+  verificationToken,
+}: {
+  callbackURL?: string | null;
+  defaultEmail?: string | null;
+  onViewChange: (view: AuthView, params?: Record<string, string>) => void;
+  verificationToken?: string | null;
+}) {
+  const [formState, updateFormState] = React.useReducer(mergeFormState, {
+    error: null,
+    notice: defaultEmail
+      ? "Verification email pending. Check your inbox or send a fresh link."
+      : null,
+    isLoading: false,
+    showPassword: false,
+  });
+
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+  } = useForm<VerifyEmailFormValues>({
+    resolver: zodResolver(verifyEmailSchema),
+    defaultValues: {
+      email: defaultEmail ?? "",
+    },
+  });
+
+  React.useEffect(() => {
+    if (!verificationToken) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const verifyEmail = async () => {
+      updateFormState({
+        error: null,
+        notice: "Verifying your email...",
+        isLoading: true,
+      });
+
+      try {
+        const response = await authEndpointRequest({
+          method: "GET",
+          path: "/verify-email",
+          query: {
+            token: verificationToken,
+            callbackURL: callbackURL ?? "/chat",
+          },
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        if (response.redirectedTo) {
+          const redirectedUrl = new URL(response.redirectedTo);
+          if (redirectedUrl.pathname === "/sign-in") {
+            throw new Error("This verification link is invalid, expired, or already used.");
+          }
+        }
+
+        updateFormState({
+          notice: "Email verified. Redirecting to your workspace...",
+          isLoading: false,
+        });
+
+        window.location.assign(response.redirectedTo ?? callbackURL ?? "/chat");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        updateFormState({
+          error: getAuthErrorMessage(
+            error as Parameters<typeof getAuthErrorMessage>[0],
+            "This verification link is invalid, expired, or already used.",
+          ),
+          notice: null,
+          isLoading: false,
+        });
+      }
+    };
+
+    void verifyEmail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [callbackURL, verificationToken]);
+
+  const onSubmit = handleSubmit(async (data) => {
+    updateFormState({
+      error: null,
+      notice: null,
+      isLoading: true,
+    });
+
+    try {
+      await authEndpointRequest({
+        method: "POST",
+        path: "/send-verification-email",
+        body: {
+          email: data.email,
+          callbackURL: callbackURL ?? "/chat",
+        },
+      });
+
+      updateFormState({
+        notice: "If that address exists and needs verification, a new link has been sent.",
+        isLoading: false,
+      });
+    } catch (error) {
+      updateFormState({
+        error: getAuthErrorMessage(
+          error as Parameters<typeof getAuthErrorMessage>[0],
+          "Unable to resend verification email.",
+        ),
+        isLoading: false,
+      });
+    }
+  });
+
+  return (
+    <m.div
+      key="verify-email"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="p-8"
+    >
+      <AuthCard
+        title="Verify email"
+        description="Use the emailed link to activate your first trusted session."
+        footer={
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 text-sm"
+            onClick={() => onViewChange(authViews.SIGN_IN)}
+            disabled={formState.isLoading}
+          >
+            Back to sign in
+          </Button>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-6">
+          <AuthMessage message={formState.error} />
+          <AuthMessage message={formState.notice} tone="notice" />
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              autoComplete="email"
+              disabled={formState.isLoading}
+              className={cn(errors.email && "border-destructive")}
+              {...register("email")}
+            />
+            {errors.email ? (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            ) : null}
+          </div>
+
+          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+            {formState.isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Resend verification email"
+            )}
+          </Button>
+        </form>
+      </AuthCard>
+    </m.div>
   );
 }
 
 export function Auth({
+  callbackURL,
   className,
+  defaultEmail,
   defaultView = authViews.SIGN_IN,
+  resetToken,
+  verificationToken,
   ...props
 }: AuthProps) {
   const router = useRouter();
 
-  const handleViewChange = (nextView: AuthView) => {
-    router.replace(nextView === authViews.SIGN_IN ? "/sign-in" : "/sign-up");
-  };
+  const handleViewChange = React.useCallback(
+    (nextView: AuthView, params?: Record<string, string>) => {
+      router.replace(buildAuthPath(nextView, params));
+    },
+    [router],
+  );
+
+  const showPrimaryTabs =
+    defaultView === authViews.SIGN_IN || defaultView === authViews.SIGN_UP;
 
   return (
     <div
@@ -430,32 +1067,64 @@ export function Auth({
       <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/90 shadow-xl backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/10" />
         <div className="relative z-10">
-          <div className="flex items-center justify-center gap-2 border-b border-border/60 p-3">
-            <Button
-              type="button"
-              variant={defaultView === authViews.SIGN_IN ? "default" : "ghost"}
-              className="rounded-full"
-              onClick={() => handleViewChange(authViews.SIGN_IN)}
-            >
-              Sign in
-            </Button>
-            <Button
-              type="button"
-              variant={defaultView === authViews.SIGN_UP ? "default" : "ghost"}
-              className="rounded-full"
-              onClick={() => handleViewChange(authViews.SIGN_UP)}
-            >
-              Sign up
-            </Button>
-          </div>
+          {showPrimaryTabs ? (
+            <div className="flex items-center justify-center gap-2 border-b border-border/60 p-3">
+              <Button
+                type="button"
+                variant={defaultView === authViews.SIGN_IN ? "default" : "ghost"}
+                className="rounded-full"
+                onClick={() => handleViewChange(authViews.SIGN_IN)}
+              >
+                Sign in
+              </Button>
+              <Button
+                type="button"
+                variant={defaultView === authViews.SIGN_UP ? "default" : "ghost"}
+                className="rounded-full"
+                onClick={() => handleViewChange(authViews.SIGN_UP)}
+              >
+                Sign up
+              </Button>
+            </div>
+          ) : null}
 
-          <AnimatePresence mode="wait">
-            {defaultView === authViews.SIGN_IN ? (
-              <AuthSignIn onSignUp={() => handleViewChange(authViews.SIGN_UP)} />
-            ) : (
-              <AuthSignUp onSignIn={() => handleViewChange(authViews.SIGN_IN)} />
-            )}
-          </AnimatePresence>
+          <LazyMotion features={domAnimation}>
+            <AnimatePresence initial={false} mode="wait">
+              {defaultView === authViews.SIGN_IN ? (
+                <AuthSignIn
+                  defaultEmail={defaultEmail}
+                  onViewChange={handleViewChange}
+                />
+              ) : null}
+
+              {defaultView === authViews.SIGN_UP ? (
+                <AuthSignUp onViewChange={handleViewChange} />
+              ) : null}
+
+              {defaultView === authViews.FORGOT_PASSWORD ? (
+                <AuthForgotPassword
+                  defaultEmail={defaultEmail}
+                  onViewChange={handleViewChange}
+                />
+              ) : null}
+
+              {defaultView === authViews.RESET_PASSWORD ? (
+                <AuthResetPassword
+                  onViewChange={handleViewChange}
+                  resetToken={resetToken}
+                />
+              ) : null}
+
+              {defaultView === authViews.VERIFY_EMAIL ? (
+                <AuthVerifyEmail
+                  callbackURL={callbackURL}
+                  defaultEmail={defaultEmail}
+                  onViewChange={handleViewChange}
+                  verificationToken={verificationToken}
+                />
+              ) : null}
+            </AnimatePresence>
+          </LazyMotion>
         </div>
       </div>
     </div>

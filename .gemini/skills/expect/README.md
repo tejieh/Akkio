@@ -42,7 +42,7 @@ The subagent handles the full lifecycle (`open` → interact → audit → `clos
 The expect MCP server must be configured. If the `open` tool is not available, install it:
 
 ```bash
-npx expect-cli@latest mcp
+bunx -y -a gemini expect-cli@latest mcp
 ```
 
 Or add it to your MCP config (`.mcp.json`, `.cursor/mcp.json`, etc.):
@@ -51,8 +51,8 @@ Or add it to your MCP config (`.mcp.json`, `.cursor/mcp.json`, etc.):
 {
   "mcpServers": {
     "expect": {
-      "command": "npx",
-      "args": ["-y", "expect-cli@latest", "mcp"]
+      "command": "bunx",
+      "args": ["-y", "-a", "gemini", "expect-cli@latest", "mcp"]
     }
   }
 }
