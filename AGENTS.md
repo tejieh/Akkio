@@ -1,1 +1,33 @@
-Do not use npm or npx. Always use bun and bunx
+# AGENTS.md
+
+## Task Completion Requirements
+
+- All of `bun fmt`, `bun lint`, and `bun typecheck` must pass before considering tasks completed.
+
+## Tech Stack
+
+- React
+- TypeScript
+- Tailwind CSS
+- Bun
+- Next.js
+
+## Core Priorities & Principles
+
+1. Performance first.
+2. Reliability first.
+3. Keep behavior predictable under load and during failures
+4. Demand elegance without over-engineering
+5. Find root causes. Not temporary fixes. Senior developer standards.
+6. Always use bun and bunx instead of npm and npx
+7. Never use 'UseEffect' in React.
+
+If a tradeoff is required, choose correctness and robustness over short-term convenience.
+
+## Maintainability
+
+Long term maintainability is a core priority. If you add new functionality, first check if there is shared logic that can be extracted to a separate module. Duplicate logic across multiple files is a code smell and should be avoided. Don't be afraid to change existing code. Don't take shortcuts by just adding local logic to solve a problem.
+
+## Skill Rules
+
+Expect: Always pass -'a gemini' arguments. Close the browser after gathering all necessary information.

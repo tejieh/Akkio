@@ -49,9 +49,9 @@ function createConfiguredAuth() {
       },
     },
     emailVerification: {
-      sendOnSignUp: true,
-      sendOnSignIn: true,
-      autoSignInAfterVerification: true,
+      sendOnSignUp: false,
+      sendOnSignIn: false,
+      autoSignInAfterVerification: false,
       expiresIn: 60 * 60,
       sendVerificationEmail: async ({ user, url }) => {
         await sendVerificationEmail({

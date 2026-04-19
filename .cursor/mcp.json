@@ -1,29 +1,8 @@
 {
   "mcpServers": {
-    "mcp-docs-server": {
-      "command": "bunx",
-      "args": [
-        "@assistant-ui/mcp-docs-server",
-        "-a",
-        "gemini"
-      ]
-    },
-    "expect": {
-      "command": "bunx",
-      "args": [
-        "-y",
-        "-a",
-        "gemini",
-        "expect-cli@latest",
-        "mcp"
-      ]
-    },
     "shadcn": {
       "command": "bunx",
-      "args": [
-        "shadcn@latest",
-        "mcp"
-      ]
+      "args": ["shadcn@latest", "mcp"]
     }
   }
 }

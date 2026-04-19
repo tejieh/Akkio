@@ -22,7 +22,10 @@ export default async function SignInPage({
 
   return (
     <AuthPageShell>
-      <Auth defaultEmail={params.email ?? null} defaultView={authViews.SIGN_IN} />
+      <Auth
+        defaultEmail={params.email ?? null}
+        defaultView={authViews.SIGN_IN}
+      />
     </AuthPageShell>
   );
 }

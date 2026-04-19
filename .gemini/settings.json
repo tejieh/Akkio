@@ -2,30 +2,11 @@
   "mcpServers": {
     "assistant-ui": {
       "command": "/Users/tejie/.bun/bin/bunx",
-      "args": [
-        "@assistant-ui/mcp-docs-server"
-      ]
+      "args": ["-y", "@assistant-ui/mcp-docs-server"]
     },
     "shadcn": {
-      "command": "bunx",
-      "args": [
-        "shadcn@latest",
-        "mcp"
-      ]
-    },
-    "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp"
-    },
-    "expect": {
-      "command": "bunx",
-      "args": [
-        "-y",
-        "-a",
-        "gemini",
-        "expect-cli@latest",
-        "mcp"
-      ]
+      "command": "/Users/tejie/.bun/bin/bunx",
+      "args": ["shadcn@latest", "mcp"]
     }
   }
 }

@@ -29,11 +29,19 @@ const c1Replacements = new Map<number, number>([
 ]);
 
 function isDisallowedControl(codePoint: number) {
-  if (codePoint === 0x09 || codePoint === 0x0a || codePoint === 0x0c || codePoint === 0x0d) {
+  if (
+    codePoint === 0x09 ||
+    codePoint === 0x0a ||
+    codePoint === 0x0c ||
+    codePoint === 0x0d
+  ) {
     return false;
   }
 
-  return (codePoint >= 0x00 && codePoint <= 0x1f) || (codePoint >= 0x7f && codePoint <= 0x9f);
+  return (
+    (codePoint >= 0x00 && codePoint <= 0x1f) ||
+    (codePoint >= 0x7f && codePoint <= 0x9f)
+  );
 }
 
 function isNonCharacter(codePoint: number) {

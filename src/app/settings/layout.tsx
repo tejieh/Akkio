@@ -1,13 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { 
-  User, 
-  Settings, 
-  CreditCard, 
-  Bell, 
-  Key, 
+import {
+  User,
+  Settings,
+  CreditCard,
+  Bell,
+  Key,
   Monitor,
-  ArrowLeft
+  ArrowLeft,
 } from "lucide-react";
 import { ReactNode } from "react";
 import { requireServerSession } from "@/lib/auth-session";
@@ -50,7 +50,11 @@ const sidebarNavItems = [
   },
 ];
 
-export default async function SettingsLayout({ children }: { children: ReactNode }) {
+export default async function SettingsLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   await requireServerSession();
 
   return (
@@ -58,7 +62,10 @@ export default async function SettingsLayout({ children }: { children: ReactNode
       <div className="hidden border-r bg-muted/20 md:block w-64 lg:w-72 shrink-0">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/chat" className="flex items-center gap-2 font-semibold hover:text-primary transition-colors text-sm">
+            <Link
+              href="/chat"
+              className="flex items-center gap-2 font-semibold hover:text-primary transition-colors text-sm"
+            >
               <ArrowLeft className="h-4 w-4" />
               <span>Back to Chat</span>
             </Link>
@@ -84,15 +91,16 @@ export default async function SettingsLayout({ children }: { children: ReactNode
       </div>
       <div className="flex flex-col flex-1 w-full overflow-hidden bg-background">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/20 px-4 lg:h-[60px] lg:px-6 md:hidden">
-          <Link href="/chat" className="flex items-center gap-2 font-semibold text-sm">
+          <Link
+            href="/chat"
+            className="flex items-center gap-2 font-semibold text-sm"
+          >
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </Link>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
-          <div className="mx-auto max-w-4xl">
-            {children}
-          </div>
+          <div className="mx-auto max-w-4xl">{children}</div>
         </main>
       </div>
     </div>

@@ -10,7 +10,8 @@ interface AuthEmailPayload {
 function toFrontendUrl(authUrlString: string, pathname: string) {
   const authUrl = new URL(authUrlString);
   const frontendUrl = new URL(pathname, authUrl.origin);
-  const token = authUrl.searchParams.get("token") ?? authUrl.pathname.split("/").at(-1);
+  const token =
+    authUrl.searchParams.get("token") ?? authUrl.pathname.split("/").at(-1);
   const callbackURL = authUrl.searchParams.get("callbackURL");
 
   if (token) {
@@ -55,7 +56,9 @@ async function sendEmail({
   });
 
   if (!response.ok) {
-    throw new Error(`Resend API request failed with status ${response.status}.`);
+    throw new Error(
+      `Resend API request failed with status ${response.status}.`,
+    );
   }
 }
 
@@ -87,6 +90,45 @@ export async function sendVerificationEmail(payload: AuthEmailPayload) {
       authRoute: "/send-verification-email",
       provider: "resend",
       userId: payload.userId,
+      errorCode: error instanceof Error ? error.message : "unknown_error",
+    });
+    throw error;
+  }
+}
+
+export async function sendOtpEmail({
+  email,
+  code,
+  userId,
+}: {
+  email: string;
+  code: string;
+  userId?: string;
+}) {
+  try {
+    await sendEmail({
+      to: email,
+      subject: "Your Akkio verification code",
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h1 style="font-size: 20px;">Verify your email</h1>
+          <p>Use this code to complete your Akkio sign-up. It expires in 60 minutes.</p>
+          <p style="font-size: 36px; font-weight: bold; letter-spacing: 0.3em; margin: 24px 0;">${code}</p>
+          <p style="color: #666; font-size: 13px;">If you didn't create an account, you can ignore this email.</p>
+        </div>
+      `,
+    });
+
+    logger.info("auth.otp_email.sent", {
+      authRoute: "/api/otp/send",
+      provider: "resend",
+      userId,
+    });
+  } catch (error) {
+    logger.error("auth.otp_email.failed", {
+      authRoute: "/api/otp/send",
+      provider: "resend",
+      userId,
       errorCode: error instanceof Error ? error.message : "unknown_error",
     });
     throw error;

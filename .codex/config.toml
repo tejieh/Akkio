@@ -1,11 +1,13 @@
-[mcp_servers.expect]
+[mcp_servers.shadcn]
 command = "bunx"
-args = [ "-y", "-a", "gemini", "expect-cli@latest", "mcp" ]
-startup_timeout_sec = 20
+args = [ "shadcn@latest", "mcp" ]
+
+[mcp_servers.supabase]
+url = "https://mcp.supabase.com/mcp?project_ref=vxmzwszlnpgjnfqdnzzs"
 
 [mcp_servers.mcp-docs-server]
-command = "bunx"
-args = [ "@assistant-ui/mcp-docs-server", "-a", "gemini" ]
+command = "npx"
+args = [ "-y", "@assistant-ui/mcp-docs-server" ]
 
 [features]
-rmcp_client=true
+rmcp_client = true

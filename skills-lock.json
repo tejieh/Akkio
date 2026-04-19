@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "expect": {
+      "source": "millionco/expect",
+      "sourceType": "github",
+      "computedHash": "2bf046b63a3a614a713ecdb62e1704141b345d22f69232802e9be9c6b5f05a45"
+    },
+    "react-doctor": {
+      "source": "millionco/react-doctor",
+      "sourceType": "github",
+      "computedHash": "b8f396bd6db7404a899af03e649f2cf12f4c846ee7d85b6b9a475cb8175abb49"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "computedHash": "873c67922d80775a9fdf596db7964b579f0408c30ec6e3d11989f6055bbec89f"
+    }
+  }
+}

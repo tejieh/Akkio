@@ -36,7 +36,7 @@ const INTEGRATIONS = [
     description: "Manage your workspace and documents.",
     icon: FileText,
     connected: false,
-  }
+  },
 ];
 
 export default async function IntegrationsPage() {
@@ -52,12 +52,12 @@ export default async function IntegrationsPage() {
           </p>
         </div>
         <Separator />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {INTEGRATIONS.map((integration) => {
             const Icon = integration.icon;
             return (
-              <div 
+              <div
                 key={integration.id}
                 className="bg-card text-card-foreground p-6 rounded-xl border flex flex-col justify-between"
               >
@@ -73,14 +73,16 @@ export default async function IntegrationsPage() {
                       </span>
                     )}
                   </div>
-                  <h4 className="text-lg font-medium mb-1">{integration.name}</h4>
+                  <h4 className="text-lg font-medium mb-1">
+                    {integration.name}
+                  </h4>
                   <p className="text-sm text-muted-foreground mb-6">
                     {integration.description}
                   </p>
                 </div>
-                
+
                 <div className="flex">
-                  <Button 
+                  <Button
                     variant={integration.connected ? "outline" : "default"}
                     className="w-full"
                   >

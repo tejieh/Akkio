@@ -7,7 +7,10 @@ import { requireServerSession } from "@/lib/auth-session";
 
 export default async function ProfileSettingsPage() {
   const session = await requireServerSession();
-  const nameParts = (session.user.name ?? "").trim().split(/\s+/).filter(Boolean);
+  const nameParts = (session.user.name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   const firstName = nameParts[0] ?? "";
   const lastName = nameParts.slice(1).join(" ");
   const avatarFallback =
@@ -15,7 +18,9 @@ export default async function ProfileSettingsPage() {
       ?.split(/\s+/)
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase())
-      .join("") || session.user.email[0]?.toUpperCase() || "U";
+      .join("") ||
+    session.user.email[0]?.toUpperCase() ||
+    "U";
 
   return (
     <div className="space-y-10 pb-16">
@@ -26,7 +31,7 @@ export default async function ProfileSettingsPage() {
         </p>
       </div>
       <Separator />
-      
+
       <div className="space-y-10">
         {/* Avatar Section */}
         <section className="flex flex-col md:flex-row gap-8 md:items-center">
@@ -38,12 +43,25 @@ export default async function ProfileSettingsPage() {
           </div>
           <div className="flex items-center gap-6 md:w-2/3">
             <Avatar className="h-20 w-20 cursor-pointer hover:opacity-80 transition-opacity border bg-muted">
-              <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? session.user.email} />
-              <AvatarFallback className="text-2xl font-medium">{avatarFallback}</AvatarFallback>
+              <AvatarImage
+                src={session.user.image ?? undefined}
+                alt={session.user.name ?? session.user.email}
+              />
+              <AvatarFallback className="text-2xl font-medium">
+                {avatarFallback}
+              </AvatarFallback>
             </Avatar>
             <div className="flex gap-3">
-              <Button variant="outline" size="sm" className="h-9">Upload new</Button>
-              <Button variant="ghost" size="sm" className="h-9 text-destructive hover:text-destructive hover:bg-destructive/10">Remove</Button>
+              <Button variant="outline" size="sm" className="h-9">
+                Upload new
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                Remove
+              </Button>
             </div>
           </div>
         </section>
@@ -53,7 +71,9 @@ export default async function ProfileSettingsPage() {
         {/* Personal Information Section */}
         <section className="flex flex-col md:flex-row gap-8 items-start">
           <div className="space-y-1 md:w-1/3 shrink-0">
-            <h4 className="text-sm font-medium leading-none">Personal Information</h4>
+            <h4 className="text-sm font-medium leading-none">
+              Personal Information
+            </h4>
             <p className="text-[13px] text-muted-foreground">
               Update your basic personal details.
             </p>
@@ -61,17 +81,48 @@ export default async function ProfileSettingsPage() {
           <div className="space-y-6 md:w-2/3">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2.5">
-                <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">First name</Label>
-                <Input id="firstName" placeholder="Jane" defaultValue={firstName} className="max-w-xs" />
+                <Label
+                  htmlFor="firstName"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  First name
+                </Label>
+                <Input
+                  id="firstName"
+                  placeholder="Jane"
+                  defaultValue={firstName}
+                  className="max-w-xs"
+                />
               </div>
               <div className="space-y-2.5">
-                <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last name</Label>
-                <Input id="lastName" placeholder="Doe" defaultValue={lastName} className="max-w-xs" />
+                <Label
+                  htmlFor="lastName"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Last name
+                </Label>
+                <Input
+                  id="lastName"
+                  placeholder="Doe"
+                  defaultValue={lastName}
+                  className="max-w-xs"
+                />
               </div>
             </div>
             <div className="space-y-2.5">
-              <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email address</Label>
-              <Input id="email" type="email" placeholder="jane@example.com" defaultValue={session.user.email} className="max-w-md" />
+              <Label
+                htmlFor="email"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Email address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="jane@example.com"
+                defaultValue={session.user.email}
+                className="max-w-md"
+              />
             </div>
           </div>
         </section>
@@ -88,8 +139,13 @@ export default async function ProfileSettingsPage() {
           </div>
           <div className="space-y-4 md:w-2/3">
             <div className="space-y-2.5">
-              <Label htmlFor="bio" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Biography</Label>
-              <textarea 
+              <Label
+                htmlFor="bio"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Biography
+              </Label>
+              <textarea
                 id="bio"
                 className="flex min-h-[120px] w-full max-w-lg rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="I'm a software engineer..."
@@ -101,11 +157,12 @@ export default async function ProfileSettingsPage() {
             </div>
           </div>
         </section>
-
       </div>
 
       <div className="pt-6 flex justify-end gap-3">
-        <Button variant="outline" className="h-9">Cancel</Button>
+        <Button variant="outline" className="h-9">
+          Cancel
+        </Button>
         <Button className="h-9">Save Changes</Button>
       </div>
     </div>

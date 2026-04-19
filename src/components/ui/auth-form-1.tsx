@@ -155,7 +155,11 @@ function AuthCard({
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
       </div>
       {children}
-      {footer ? <div className="mt-8 text-center text-sm text-muted-foreground">{footer}</div> : null}
+      {footer ? (
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+          {footer}
+        </div>
+      ) : null}
     </>
   );
 }
@@ -195,7 +199,11 @@ function PasswordInput<TFieldValues extends FieldValues>({
           {...register(id)}
         />
         <Button
-          aria-label={showPassword ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          aria-label={
+            showPassword
+              ? `Hide ${label.toLowerCase()}`
+              : `Show ${label.toLowerCase()}`
+          }
           type="button"
           variant="ghost"
           size="icon"
@@ -203,7 +211,11 @@ function PasswordInput<TFieldValues extends FieldValues>({
           onClick={onToggle}
           disabled={disabled}
         >
-          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {showPassword ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
         </Button>
       </div>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
@@ -225,7 +237,9 @@ function AuthSignIn({
     isLoading: false,
     showPassword: false,
   });
-  const [verificationEmail, setVerificationEmail] = React.useState(defaultEmail ?? "");
+  const [verificationEmail, setVerificationEmail] = React.useState(
+    defaultEmail ?? "",
+  );
 
   const {
     formState: { errors },
@@ -356,7 +370,9 @@ function AuthSignIn({
                 variant="link"
                 className="h-auto p-0 text-sm"
                 onClick={() =>
-                  onViewChange(authViews.VERIFY_EMAIL, { email: verificationEmail })
+                  onViewChange(authViews.VERIFY_EMAIL, {
+                    email: verificationEmail,
+                  })
                 }
                 disabled={formState.isLoading}
               >
@@ -365,7 +381,11 @@ function AuthSignIn({
             ) : null}
           </div>
 
-          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={formState.isLoading}
+          >
             {formState.isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -383,10 +403,11 @@ function AuthSignIn({
 
 function AuthSignUp({
   onViewChange,
+  onOtpRequired,
 }: {
   onViewChange: (view: AuthView, params?: Record<string, string>) => void;
+  onOtpRequired: (email: string, password: string) => void;
 }) {
-  const router = useRouter();
   const [formState, setFormState] = React.useState<FormState>({
     error: null,
     notice: null,
@@ -436,14 +457,24 @@ function AuthSignUp({
       return;
     }
 
-    startTransition(() => {
-      router.push(
-        buildAuthPath(authViews.VERIFY_EMAIL, {
-          email: data.email,
-          sent: "1",
-        }),
-      );
+    // Send OTP verification code
+    const otpResponse = await fetch("/api/otp/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: data.email }),
     });
+
+    if (!otpResponse.ok) {
+      setFormState((current) => ({
+        ...current,
+        error:
+          "Account created but we couldn't send a verification code. Try signing in to request one.",
+        isLoading: false,
+      }));
+      return;
+    }
+
+    onOtpRequired(data.email, data.password);
   });
 
   return (
@@ -545,7 +576,10 @@ function AuthSignUp({
               <Label id={termsLabelId} htmlFor="terms" className="text-sm">
                 I agree to the terms
               </Label>
-              <p id={termsDescriptionId} className="text-xs text-muted-foreground">
+              <p
+                id={termsDescriptionId}
+                className="text-xs text-muted-foreground"
+              >
                 Sign-up uses email and password only. Sessions start after email
                 verification.
               </p>
@@ -555,7 +589,11 @@ function AuthSignUp({
             <p className="text-xs text-destructive">{errors.terms.message}</p>
           ) : null}
 
-          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={formState.isLoading}
+          >
             {formState.isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -676,7 +714,11 @@ function AuthForgotPassword({
             ) : null}
           </div>
 
-          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={formState.isLoading}
+          >
             {formState.isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -792,7 +834,8 @@ function AuthResetPassword({
 
           {!resetToken ? (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-              This password reset link is missing or malformed. Request a fresh link.
+              This password reset link is missing or malformed. Request a fresh
+              link.
             </div>
           ) : null}
 
@@ -912,7 +955,9 @@ function AuthVerifyEmail({
         if (response.redirectedTo) {
           const redirectedUrl = new URL(response.redirectedTo);
           if (redirectedUrl.pathname === "/sign-in") {
-            throw new Error("This verification link is invalid, expired, or already used.");
+            throw new Error(
+              "This verification link is invalid, expired, or already used.",
+            );
           }
         }
 
@@ -963,7 +1008,8 @@ function AuthVerifyEmail({
       });
 
       updateFormState({
-        notice: "If that address exists and needs verification, a new link has been sent.",
+        notice:
+          "If that address exists and needs verification, a new link has been sent.",
         isLoading: false,
       });
     } catch (error) {
@@ -1021,7 +1067,11 @@ function AuthVerifyEmail({
             ) : null}
           </div>
 
-          <Button type="submit" className="w-full" disabled={formState.isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={formState.isLoading}
+          >
             {formState.isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1037,6 +1087,223 @@ function AuthVerifyEmail({
   );
 }
 
+function AuthVerifyOtp({
+  email,
+  password,
+  onViewChange,
+}: {
+  email: string;
+  password: string;
+  onViewChange: (view: AuthView, params?: Record<string, string>) => void;
+}) {
+  const router = useRouter();
+  const [digits, setDigits] = React.useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
+  const [error, setError] = React.useState<string | null>(null);
+  const [notice, setNotice] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isResending, setIsResending] = React.useState(false);
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  const code = digits.join("");
+
+  const focusIndex = (i: number) => {
+    inputRefs.current[i]?.focus();
+  };
+
+  const handleChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value = e.target.value.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[index] = value;
+    setDigits(next);
+    if (value && index < 5) {
+      focusIndex(index + 1);
+    }
+  };
+
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      const next = [...digits];
+      next[index - 1] = "";
+      setDigits(next);
+      focusIndex(index - 1);
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (!pasted) return;
+    const next = Array(6).fill("") as string[];
+    pasted.split("").forEach((ch, i) => {
+      next[i] = ch;
+    });
+    setDigits(next);
+    focusIndex(Math.min(pasted.length, 5));
+  };
+
+  const verify = async (otp: string) => {
+    setIsLoading(true);
+    setError(null);
+    setNotice(null);
+
+    const response = await fetch("/api/otp/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code: otp }),
+    });
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      setError(data.error ?? "Invalid or expired code. Try again.");
+      setIsLoading(false);
+      setDigits(["", "", "", "", "", ""]);
+      setTimeout(() => focusIndex(0), 0);
+      return;
+    }
+
+    const { error: signInError } = await authClient.signIn.email({
+      email,
+      password,
+      callbackURL: "/chat",
+    });
+
+    if (signInError) {
+      setError("Verified! But sign-in failed — try signing in manually.");
+      setIsLoading(false);
+      return;
+    }
+
+    startTransition(() => {
+      router.push("/chat");
+      router.refresh();
+    });
+  };
+
+  // Auto-submit once all 6 digits are filled
+  React.useEffect(() => {
+    if (code.length === 6 && !isLoading) {
+      void verify(code);
+    }
+  }, [code, isLoading, verify]);
+
+  // Focus first input on mount
+  React.useEffect(() => {
+    focusIndex(0);
+  }, []);
+
+  const resend = async () => {
+    setIsResending(true);
+    setError(null);
+    setDigits(["", "", "", "", "", ""]);
+    await fetch("/api/otp/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    setNotice("A new code has been sent.");
+    setIsResending(false);
+    setTimeout(() => focusIndex(0), 0);
+  };
+
+  const displayEmail = email.length > 28 ? `${email.slice(0, 25)}…` : email;
+
+  return (
+    <m.div
+      key="verify-otp"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="p-8"
+    >
+      <AuthCard
+        title="Check your email"
+        description={`Enter the 6-digit code sent to ${displayEmail}.`}
+        footer={
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 text-sm"
+            onClick={() => onViewChange(authViews.SIGN_IN)}
+            disabled={isLoading}
+          >
+            Back to sign in
+          </Button>
+        }
+      >
+        <div className="space-y-6">
+          <AuthMessage message={error} />
+          <AuthMessage message={notice} tone="notice" />
+
+          <div className="flex justify-center gap-2">
+            {digits.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleChange(i, e)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                onPaste={handlePaste}
+                disabled={isLoading}
+                aria-label={`Digit ${i + 1} of 6`}
+                className={cn(
+                  "h-14 w-11 rounded-lg border bg-background text-center text-xl font-semibold",
+                  "transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                  digit ? "border-primary" : "border-input",
+                  isLoading && "cursor-not-allowed opacity-50",
+                )}
+              />
+            ))}
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Verifying…
+            </div>
+          ) : null}
+
+          <p className="text-center text-sm text-muted-foreground">
+            Didn&apos;t receive it?{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm"
+              onClick={resend}
+              disabled={isResending || isLoading}
+            >
+              {isResending ? "Sending…" : "Resend code"}
+            </Button>
+          </p>
+        </div>
+      </AuthCard>
+    </m.div>
+  );
+}
+
 export function Auth({
   callbackURL,
   className,
@@ -1047,16 +1314,29 @@ export function Auth({
   ...props
 }: AuthProps) {
   const router = useRouter();
+  const [otpContext, setOtpContext] = React.useState<{
+    email: string;
+    password: string;
+  } | null>(null);
 
   const handleViewChange = React.useCallback(
     (nextView: AuthView, params?: Record<string, string>) => {
+      setOtpContext(null);
       router.replace(buildAuthPath(nextView, params));
     },
     [router],
   );
 
+  const handleOtpRequired = React.useCallback(
+    (email: string, password: string) => {
+      setOtpContext({ email, password });
+    },
+    [],
+  );
+
   const showPrimaryTabs =
-    defaultView === authViews.SIGN_IN || defaultView === authViews.SIGN_UP;
+    !otpContext &&
+    (defaultView === authViews.SIGN_IN || defaultView === authViews.SIGN_UP);
 
   return (
     <div
@@ -1071,7 +1351,9 @@ export function Auth({
             <div className="flex items-center justify-center gap-2 border-b border-border/60 p-3">
               <Button
                 type="button"
-                variant={defaultView === authViews.SIGN_IN ? "default" : "ghost"}
+                variant={
+                  defaultView === authViews.SIGN_IN ? "default" : "ghost"
+                }
                 className="rounded-full"
                 onClick={() => handleViewChange(authViews.SIGN_IN)}
               >
@@ -1079,7 +1361,9 @@ export function Auth({
               </Button>
               <Button
                 type="button"
-                variant={defaultView === authViews.SIGN_UP ? "default" : "ghost"}
+                variant={
+                  defaultView === authViews.SIGN_UP ? "default" : "ghost"
+                }
                 className="rounded-full"
                 onClick={() => handleViewChange(authViews.SIGN_UP)}
               >
@@ -1090,32 +1374,34 @@ export function Auth({
 
           <LazyMotion features={domAnimation}>
             <AnimatePresence initial={false} mode="wait">
-              {defaultView === authViews.SIGN_IN ? (
+              {otpContext ? (
+                <AuthVerifyOtp
+                  key="verify-otp"
+                  email={otpContext.email}
+                  password={otpContext.password}
+                  onViewChange={handleViewChange}
+                />
+              ) : defaultView === authViews.SIGN_IN ? (
                 <AuthSignIn
                   defaultEmail={defaultEmail}
                   onViewChange={handleViewChange}
                 />
-              ) : null}
-
-              {defaultView === authViews.SIGN_UP ? (
-                <AuthSignUp onViewChange={handleViewChange} />
-              ) : null}
-
-              {defaultView === authViews.FORGOT_PASSWORD ? (
+              ) : defaultView === authViews.SIGN_UP ? (
+                <AuthSignUp
+                  onViewChange={handleViewChange}
+                  onOtpRequired={handleOtpRequired}
+                />
+              ) : defaultView === authViews.FORGOT_PASSWORD ? (
                 <AuthForgotPassword
                   defaultEmail={defaultEmail}
                   onViewChange={handleViewChange}
                 />
-              ) : null}
-
-              {defaultView === authViews.RESET_PASSWORD ? (
+              ) : defaultView === authViews.RESET_PASSWORD ? (
                 <AuthResetPassword
                   onViewChange={handleViewChange}
                   resetToken={resetToken}
                 />
-              ) : null}
-
-              {defaultView === authViews.VERIFY_EMAIL ? (
+              ) : defaultView === authViews.VERIFY_EMAIL ? (
                 <AuthVerifyEmail
                   callbackURL={callbackURL}
                   defaultEmail={defaultEmail}

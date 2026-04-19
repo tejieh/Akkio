@@ -64,7 +64,9 @@ function createAuthEndpointError(
           : undefined
       : undefined;
 
-  const error = new Error(message || statusText || "Authentication request failed.") as Error & {
+  const error = new Error(
+    message || statusText || "Authentication request failed.",
+  ) as Error & {
     status: number;
     statusText: string;
   };
@@ -110,7 +112,11 @@ export async function authEndpointRequest<T>({
     : await response.text().catch(() => null);
 
   if (!response.ok) {
-    throw createAuthEndpointError(response.status, response.statusText, payload);
+    throw createAuthEndpointError(
+      response.status,
+      response.statusText,
+      payload,
+    );
   }
 
   return {

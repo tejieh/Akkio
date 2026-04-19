@@ -61,7 +61,10 @@ export async function POST(req: Request) {
     });
 
     if (!session) {
-      return Response.json({ error: "Unauthorized", requestId }, { status: 401 });
+      return Response.json(
+        { error: "Unauthorized", requestId },
+        { status: 401 },
+      );
     }
 
     const body = chatRequestSchema.parse(await req.json());
@@ -81,7 +84,9 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: cloudflare.chat("@cf/meta/llama-3.3-70b-instruct-fp8-fast"),
-      messages: await convertToModelMessages(body.messages as unknown as UIMessage[]),
+      messages: await convertToModelMessages(
+        body.messages as unknown as UIMessage[],
+      ),
       tools: {
         ...frontendTools(
           body.tools as Record<

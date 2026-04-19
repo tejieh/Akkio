@@ -14,7 +14,8 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Heylow - Low Carbon Future",
-  description: "We are a design studio building low-carbon brands and websites.",
+  description:
+    "We are a design studio building low-carbon brands and websites.",
 };
 
 export const viewport: Viewport = {

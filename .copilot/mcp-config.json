@@ -1,0 +1,36 @@
+{
+    "mcpServers": {
+        "shadcn": {
+            "type": "local",
+            "command": "/Users/tejie/.bun/bin/bunx",
+            "tools": [
+                "*"
+            ],
+            "args": [
+                "-y",
+                "shadcn@latest",
+                "mcp"
+            ],
+            "env": {}
+        },
+        "assistant-ui": {
+            "type": "local",
+            "command": "/Users/tejie/.bun/bin/bunx",
+            "tools": [
+                "*"
+            ],
+            "args": [
+                "-y",
+                "@assistant-ui/mcp-docs-server"
+            ],
+            "env": {}
+        },
+        "supabase": {
+            "type": "http",
+            "url": "https://mcp.supabase.com/mcp",
+            "tools": [
+                "*"
+            ]
+        }
+    }
+}
