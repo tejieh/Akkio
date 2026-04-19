@@ -16,6 +16,7 @@ model auth_users {
   updatedAt     DateTime        @updatedAt
   sessions      auth_sessions[]
   accounts      auth_accounts[]
+  composioEntity composio_entities?
 }
 
 model auth_sessions {
@@ -69,4 +70,15 @@ model rateLimit {
   lastRequest BigInt
 
   @@map("rateLimit")
+}
+
+model composio_entities {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  entityId  String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      auth_users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entityId], map: "composio_entities_entityId_idx")
 }

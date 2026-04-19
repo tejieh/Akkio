@@ -13,8 +13,15 @@ const rawEnvSchema = z.object({
   RESEND_API_KEY: z.string().trim().optional(),
   AUTH_EMAIL_FROM: z.string().trim().optional(),
   AUTH_EMAIL_REPLY_TO: z.string().trim().optional(),
+  COMPOSIO_API_KEY: z.string().trim().optional(),
+  COMPOSIO_AUTH_CONFIG_GMAIL: z.string().trim().optional(),
+  COMPOSIO_AUTH_CONFIG_GITHUB: z.string().trim().optional(),
+  COMPOSIO_AUTH_CONFIG_GOOGLECALENDAR: z.string().trim().optional(),
+  COMPOSIO_AUTH_CONFIG_NOTION: z.string().trim().optional(),
   CLOUDFLARE_ACCOUNT_ID: z.string().trim().optional(),
   CLOUDFLARE_API_TOKEN: z.string().trim().optional(),
+  OPENAI_API_KEY: z.string().trim().optional(),
+  OPENAI_MODEL: z.string().trim().optional(),
 });
 
 const rawEnv = rawEnvSchema.parse(process.env);
@@ -73,9 +80,12 @@ function parseCsv(value?: string) {
 export const nodeEnv = rawEnv.NODE_ENV;
 export const isProduction = nodeEnv === "production";
 export const isAuthConfigured = Boolean(rawEnv.DATABASE_URL);
+export const isComposioConfigured = Boolean(rawEnv.COMPOSIO_API_KEY);
 export const isWorkersAIConfigured = Boolean(
   rawEnv.CLOUDFLARE_ACCOUNT_ID && rawEnv.CLOUDFLARE_API_TOKEN,
 );
+export const isOpenAIConfigured = Boolean(rawEnv.OPENAI_API_KEY);
+export const isAIConfigured = isWorkersAIConfigured || isOpenAIConfigured;
 
 let authEnvCache: {
   databaseUrl: string;
@@ -195,5 +205,32 @@ export function getWorkersAIEnv() {
   return {
     accountId: rawEnv.CLOUDFLARE_ACCOUNT_ID,
     apiToken: rawEnv.CLOUDFLARE_API_TOKEN,
+  };
+}
+
+export function getComposioEnv() {
+  if (!rawEnv.COMPOSIO_API_KEY) {
+    return null;
+  }
+
+  return {
+    apiKey: rawEnv.COMPOSIO_API_KEY,
+    authConfigs: {
+      gmail: rawEnv.COMPOSIO_AUTH_CONFIG_GMAIL,
+      github: rawEnv.COMPOSIO_AUTH_CONFIG_GITHUB,
+      googlecalendar: rawEnv.COMPOSIO_AUTH_CONFIG_GOOGLECALENDAR,
+      notion: rawEnv.COMPOSIO_AUTH_CONFIG_NOTION,
+    },
+  };
+}
+
+export function getOpenAIEnv() {
+  if (!rawEnv.OPENAI_API_KEY) {
+    return null;
+  }
+
+  return {
+    apiKey: rawEnv.OPENAI_API_KEY,
+    model: rawEnv.OPENAI_MODEL || "gpt-5.2",
   };
 }

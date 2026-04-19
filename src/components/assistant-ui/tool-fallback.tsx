@@ -90,12 +90,83 @@ const statusIconMap: Record<ToolStatus, React.ElementType> = {
   "requires-action": AlertCircleIcon,
 };
 
+const readVerbs = new Set([
+  "FETCH",
+  "FIND",
+  "GET",
+  "LIST",
+  "QUERY",
+  "READ",
+  "RETRIEVE",
+  "SEARCH",
+]);
+
+const writeVerbs = new Set(["ADD", "CREATE", "POST", "SEND"]);
+const editVerbs = new Set(["EDIT", "MODIFY", "PATCH", "UPDATE", "UPSERT"]);
+
+function extractExecutedToolSlug(argsText?: string) {
+  if (!argsText) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(argsText) as {
+      tool?: unknown;
+      tools?: Array<{ tool?: unknown }>;
+    } | null;
+
+    if (parsed && typeof parsed.tool === "string") {
+      return parsed.tool;
+    }
+
+    const firstTool = parsed?.tools?.[0];
+    return firstTool && typeof firstTool.tool === "string"
+      ? firstTool.tool
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatToolName(toolName: string) {
+  return toolName
+    .toLowerCase()
+    .split("_")
+    .map((segment) => segment[0]?.toUpperCase() + segment.slice(1))
+    .join(" ");
+}
+
+function getToolStepLabel(toolName: string, argsText?: string) {
+  if (toolName === "COMPOSIO_SEARCH_TOOLS") {
+    return "Read";
+  }
+
+  const resolvedToolName = extractExecutedToolSlug(argsText) ?? toolName;
+  const parts = resolvedToolName.toUpperCase().split("_");
+
+  if (parts.some((part) => readVerbs.has(part))) {
+    return "Read";
+  }
+
+  if (parts.some((part) => writeVerbs.has(part))) {
+    return "Write";
+  }
+
+  if (parts.some((part) => editVerbs.has(part))) {
+    return "Edit";
+  }
+
+  return "Execute";
+}
+
 function ToolFallbackTrigger({
+  argsText,
   toolName,
   status,
   className,
   ...props
 }: React.ComponentProps<typeof CollapsibleTrigger> & {
+  argsText?: string;
   toolName: string;
   status?: ToolCallMessagePartStatus;
 }) {
@@ -103,9 +174,13 @@ function ToolFallbackTrigger({
   const isRunning = statusType === "running";
   const isCancelled =
     status?.type === "incomplete" && status.reason === "cancelled";
+  const displayToolName = formatToolName(
+    extractExecutedToolSlug(argsText) ?? toolName,
+  );
+  const stepLabel = getToolStepLabel(toolName, argsText);
 
   const Icon = statusIconMap[statusType];
-  const label = isCancelled ? "Cancelled tool" : "Used tool";
+  const label = isCancelled ? "Cancelled step" : "Tool step";
 
   return (
     <CollapsibleTrigger
@@ -131,8 +206,13 @@ function ToolFallbackTrigger({
           isCancelled && "text-muted-foreground line-through",
         )}
       >
-        <span>
-          {label}: <b>{toolName}</b>
+        <span className="flex items-center gap-2">
+          <span className="rounded-full border border-border bg-muted px-2 py-0.5 font-medium text-[11px] uppercase tracking-wide text-muted-foreground">
+            {stepLabel}
+          </span>
+          <span>
+            {label}: <b>{displayToolName}</b>
+          </span>
         </span>
         {isRunning && (
           <span
@@ -140,7 +220,7 @@ function ToolFallbackTrigger({
             data-slot="tool-fallback-trigger-shimmer"
             className="aui-tool-fallback-trigger-shimmer shimmer pointer-events-none absolute inset-0 motion-reduce:animate-none"
           >
-            {label}: <b>{toolName}</b>
+            {label}: <b>{displayToolName}</b>
           </span>
         )}
       </span>
@@ -281,7 +361,11 @@ const ToolFallbackImpl: ToolCallMessagePartComponent = ({
     <ToolFallbackRoot
       className={cn(isCancelled && "border-muted-foreground/30 bg-muted/30")}
     >
-      <ToolFallbackTrigger toolName={toolName} status={status} />
+      <ToolFallbackTrigger
+        argsText={argsText}
+        toolName={toolName}
+        status={status}
+      />
       <ToolFallbackContent>
         <ToolFallbackError status={status} />
         <ToolFallbackArgs

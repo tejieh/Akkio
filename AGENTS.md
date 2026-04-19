@@ -30,4 +30,4 @@ Long term maintainability is a core priority. If you add new functionality, firs
 
 ## Skill Rules
 
-Expect: Always pass -'a gemini' arguments. Close the browser after gathering all necessary information.
+Expect: Use Gemini for all Expect agent-driven workflows. Run Expect from the repo root. Do not use `expect init`. For AI-driven browser testing, use `bunx -y expect-cli@latest tui -a gemini ...`. If an Expect command supports choosing an agent/provider, use Gemini. Direct Expect subcommands such as `open`, `screenshot`, `playwright`, `console_logs`, `network_requests`, `performance_metrics`, `accessibility_audit`, and `close` do not take an agent flag; run them normally. Close the browser after gathering all necessary information.

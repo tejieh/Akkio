@@ -16,6 +16,8 @@ import {
   ComposerPrimitive,
   ErrorPrimitive,
   MessagePrimitive,
+  type ReasoningGroupComponent,
+  type ReasoningMessagePartComponent,
   SuggestionPrimitive,
   ThreadPrimitive,
   useAuiState,
@@ -220,15 +222,16 @@ const AssistantMessage: FC = () => {
       data-role="assistant"
     >
       <div className="aui-assistant-message-content wrap-break-word px-2 text-foreground leading-relaxed">
-        <MessagePrimitive.Parts>
-          {({ part }) => {
-            if (part.type === "text") return <MarkdownText />;
-            if (part.type === "reasoning") return <ChainOfThought />;
-            if (part.type === "tool-call")
-              return part.toolUI ?? <ToolFallback {...part} />;
-            return null;
+        <MessagePrimitive.Parts
+          components={{
+            Text: MarkdownText,
+            Reasoning: AssistantReasoning,
+            ReasoningGroup: AssistantReasoningGroup,
+            tools: {
+              Fallback: ToolFallback,
+            },
           }}
-        </MessagePrimitive.Parts>
+        />
         <MessageError />
       </div>
 
@@ -240,21 +243,59 @@ const AssistantMessage: FC = () => {
   );
 };
 
-const ChainOfThought: FC = () => {
+const AssistantReasoning: ReasoningMessagePartComponent = () => {
+  return (
+    <div className="py-1 text-sm text-muted-foreground/90">
+      <MarkdownText />
+    </div>
+  );
+};
+
+const AssistantReasoningGroup: ReasoningGroupComponent = ({
+  children,
+  startIndex,
+  endIndex,
+}) => {
+  const isReasoningStreaming = useAuiState((s) => {
+    if (s.message.status?.type !== "running") {
+      return false;
+    }
+
+    const lastIndex = s.message.parts.length - 1;
+
+    if (lastIndex < 0) {
+      return false;
+    }
+
+    const lastType = s.message.parts[lastIndex]?.type;
+    if (lastType !== "reasoning") {
+      return false;
+    }
+
+    return lastIndex >= startIndex && lastIndex <= endIndex;
+  });
+
   return (
     <ChainOfThoughtPrimitive.Root className="my-2">
-      <ChainOfThoughtPrimitive.AccordionTrigger className="flex w-full cursor-pointer items-center gap-2 py-2 font-medium text-sm text-muted-foreground hover:text-foreground transition-colors">
+      <ChainOfThoughtPrimitive.AccordionTrigger
+        className={cn(
+          "flex w-full cursor-pointer items-center gap-2 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
+          isReasoningStreaming && "text-foreground",
+        )}
+      >
         <AuiIf condition={(s) => s.chainOfThought.collapsed}>
           <ChevronRightIcon className="size-4 shrink-0" />
         </AuiIf>
         <AuiIf condition={(s) => !s.chainOfThought.collapsed}>
           <ChevronDownIcon className="size-4 shrink-0" />
         </AuiIf>
-        Thinking
+        <span className="text-[11px] font-medium uppercase tracking-[0.2em]">
+          Reasoning
+        </span>
       </ChainOfThoughtPrimitive.AccordionTrigger>
       <AuiIf condition={(s) => !s.chainOfThought.collapsed}>
-        <div className="py-2 text-muted-foreground text-sm opacity-80">
-          <MarkdownText />
+        <div className="py-2 pl-6 text-muted-foreground text-sm opacity-85">
+          {children}
         </div>
       </AuiIf>
     </ChainOfThoughtPrimitive.Root>
