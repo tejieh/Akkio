@@ -1,27 +1,23 @@
 {
-    "$schema": "https://opencode.ai/config.json",
-    "mcp": {
-        "supabase": {
-            "type": "remote",
-            "url": "https://mcp.supabase.com/mcp?project_ref=vxmzwszlnpgjnfqdnzzs",
-            "enabled": true
-        },
-        "shadcn": {
-            "type": "local",
-            "command": [
-                "/Users/tejie/.bun/bin/bunx",
-                "shadcn@latest",
-                "mcp"
-            ],
-            "enabled": true
-        },
-        "assistant-ui": {
-            "type": "local",
-            "command": [
-                "/Users/tejie/.bun/bin/bunx",
-                "@assistant-ui/mcp-docs-server"
-            ],
-            "enabled": true
-        }
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref=vxmzwszlnpgjnfqdnzzs",
+      "enabled": true
+    },
+    "shadcn": {
+      "type": "local",
+      "command": ["/Users/tejie/.bun/bin/bunx", "shadcn@latest", "mcp"],
+      "enabled": true
+    },
+    "assistant-ui": {
+      "type": "local",
+      "command": [
+        "/Users/tejie/.bun/bin/bunx",
+        "@assistant-ui/mcp-docs-server"
+      ],
+      "enabled": true
     }
+  }
 }

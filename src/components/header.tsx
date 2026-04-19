@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { ArrowRight, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -29,43 +28,19 @@ export function Header({ isAuthenticated = false }: HeaderProps) {
   }, [pathname]);
 
   return (
-    <motion.header
-      key={pathname}
-      initial={false}
-      animate={{
-        paddingTop: isScrolled ? "1rem" : "0rem",
-        paddingLeft: isScrolled ? "0.5rem" : "0rem",
-        paddingRight: isScrolled ? "0.5rem" : "0rem",
-      }}
-      transition={{
-        type: "tween",
-        ease: [0.22, 1, 0.36, 1],
-        duration: 0.5,
-      }}
-      className="fixed top-0 left-0 w-full z-50 md:px-4"
+    <header
+      className={cn(
+        "fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        isScrolled ? "pt-4 px-2" : "pt-0 px-0",
+      )}
     >
-      <motion.div
-        initial={false}
-        animate={{
-          borderRadius: isScrolled ? 9999 : 0,
-          backgroundColor: isScrolled
-            ? "rgba(255, 255, 255, 0.65)"
-            : "rgba(255, 255, 255, 0)",
-          borderColor: isScrolled
-            ? "rgba(229, 231, 235, 1)"
-            : "rgba(229, 231, 235, 0)",
-          maxWidth: isScrolled ? "42rem" : "100%",
-        }}
-        transition={{
-          type: "tween",
-          ease: [0.22, 1, 0.36, 1],
-          duration: 0.5,
-        }}
-        className={`mx-auto relative flex justify-between items-center w-full border ${
+      <div
+        className={cn(
+          "mx-auto relative flex justify-between items-center w-full border transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
           isScrolled
-            ? "max-w-2xl backdrop-blur-md shadow-lg py-2 px-6"
-            : "max-w-full shadow-none py-4 px-4 md:px-8"
-        }`}
+            ? "max-w-2xl rounded-full bg-white/65 border-gray-200 backdrop-blur-md shadow-lg py-2 px-6"
+            : "max-w-full rounded-none bg-transparent border-transparent shadow-none py-4 px-4 md:px-8",
+        )}
       >
         {/* Logo block */}
         <div className="flex items-center gap-4 flex-1">
@@ -117,7 +92,7 @@ export function Header({ isAuthenticated = false }: HeaderProps) {
             {isAuthenticated ? "Go to Chat" : "Sign In"}
           </Link>
         </div>
-      </motion.div>
-    </motion.header>
+      </div>
+    </header>
   );
 }

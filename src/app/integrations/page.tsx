@@ -14,21 +14,21 @@ const INTEGRATIONS = [
     name: "Gmail",
     description: "Sync your emails and manage communication.",
     icon: Mail,
-    connected: true, // Example connected state
+    connected: false,
   },
   {
     id: "github",
     name: "GitHub",
     description: "Track issues, pull requests, and repositories.",
     icon: GitBranch,
-    connected: false, // Example disconnected state
+    connected: false,
   },
   {
     id: "gcal",
     name: "Google Calendar",
     description: "Sync your calendar events and schedule meetings.",
     icon: Calendar,
-    connected: true,
+    connected: false,
   },
   {
     id: "notion",
